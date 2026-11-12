@@ -52,3 +52,11 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 $route['default_controller'] = 'auth';
 $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
+
+// Routing tambahan untuk mencocokkan cashier dan kasir
+$route['kasir'] = 'cashier';
+$route['kasir/(:any)'] = 'cashier/$1';
+
+// Tambahkan rute ini juga di routes.php
+$route['pelanggan'] = 'pelanggan';
+$route['pelanggan/(:any)'] = 'pelanggan/$1';
