@@ -63,6 +63,7 @@ class Pelanggan extends CI_Controller {
     {
         $cart = $this->session->userdata('cart_pelanggan');
         $nama_pemesan = $this->input->post('nama_pemesan');
+        $metode_pembayaran = $this->input->post('metode_pembayaran') ?: 'Cash'; // Tangkap pilihan Cash atau QRIS dari HP
         
         if (empty($cart) || empty($nama_pemesan)) {
             $this->session->set_flashdata('error', 'Keranjang masih kosong atau nama pemesan belum diisi!');
@@ -88,7 +89,7 @@ class Pelanggan extends CI_Controller {
             'uang_kembalian'    => 0,
             'nomor_meja'        => 'Meja ' . $no_meja . ' (' . $nama_pemesan . ')',
             'jenis_pesanan'     => 'Dine-in',
-            'metode_pembayaran' => 'Pending',
+            'metode_pembayaran' => $metode_pembayaran, // Menyimpan pilihan 'Cash' atau 'QRIS' dari HP
             'status_bayar'      => 'Pending' // Wajib lunas di kasir sebelum ke dapur
         ];
 
@@ -110,7 +111,14 @@ class Pelanggan extends CI_Controller {
         // Kosongkan keranjang pelanggan
         $this->session->unset_userdata('cart_pelanggan');
         
-        $this->session->set_flashdata('success', 'Pesanan berhasil dikirim! Silakan segera lakukan pembayaran ke Kasir.');
+        // Simpan data order ke session untuk ditampilkan di halaman sukses jika diperlukan
+        $this->session->set_userdata('last_order', [
+            'no_faktur' => $no_faktur,
+            'metode'    => $metode_pembayaran,
+            'total'     => $total_bayar
+        ]);
+
+        $this->session->set_flashdata('success', 'Pesanan berhasil dikirim! Silakan konfirmasi pembayaran ke Kasir.');
 
         redirect('pelanggan/sukses/' . $no_meja);
     }

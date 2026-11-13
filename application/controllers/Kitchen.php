@@ -18,22 +18,22 @@ class Kitchen extends CI_Controller {
 
     public function index()
     {
-        // Ambil pesanan yang statusnya masih pending
-        $this->db->select('detail_transaksi.*, menu.nama_menu, transaksi.no_faktur, transaksi.tanggal');
+        // Ditambahkan transaksi.nomor_meja di dalam select
+        $this->db->select('detail_transaksi.*, menu.nama_menu, menu.foto, transaksi.no_faktur, transaksi.tanggal, transaksi.nomor_meja');
         $this->db->from('detail_transaksi');
         $this->db->join('menu', 'menu.id = detail_transaksi.id_menu');
         $this->db->join('transaksi', 'transaksi.id_transaksi = detail_transaksi.id_transaksi');
         $this->db->where('detail_transaksi.status', 'pending');
-        $this->db->order_by('transaksi.tanggal', 'ASC'); // Urutkan dari pesanan tertua (First In, First Out)
+        $this->db->order_by('transaksi.tanggal', 'ASC'); 
         $this->db->limit(20);
         $data['pesanan'] = $this->db->get()->result_array();
 
+        // Menggunakan v_kitchen sesuai nama file view kamu
         $this->load->view('v_kitchen', $data);
     }
 
     public function selesai($id_detail)
     {
-        // Ubah status pesanan menjadi selesai berdasarkan id_detail
         $this->db->where('id_detail', $id_detail);
         $this->db->update('detail_transaksi', ['status' => 'selesai']);
 
