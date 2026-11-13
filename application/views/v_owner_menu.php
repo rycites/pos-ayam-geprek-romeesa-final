@@ -37,6 +37,7 @@
                     <thead class="table-dark">
                         <tr>
                             <th>No</th>
+                            <th>Foto</th>
                             <th>Nama Menu</th>
                             <th>Kategori</th>
                             <th>Harga</th>
@@ -48,12 +49,19 @@
                             <?php $no = 1; foreach($menu as $m): ?>
                                 <tr>
                                     <td><?= $no++; ?></td>
+                                    <td>
+                                        <?php if(!empty($m['foto'])): ?>
+                                            <img src="<?= base_url('uploads/' . $m['foto']); ?>" alt="Foto" width="50" height="50" style="object-fit: cover;" class="rounded shadow-sm">
+                                        <?php else: ?>
+                                            <span class="badge bg-secondary" style="font-size: 10px;">Tanpa Foto</span>
+                                        <?php endif; ?>
+                                    </td>
                                     <td class="fw-bold"><?= $m['nama_menu']; ?></td>
                                     <td><span class="badge bg-secondary"><?= ucfirst($m['kategori']); ?></span></td>
                                     <td class="text-success fw-bold">Rp <?= number_format($m['harga'], 0, ',', '.'); ?></td>
                                     <td class="text-center">
                                         <button class="btn btn-warning btn-sm text-white" data-bs-toggle="modal" data-bs-target="#modalEdit<?= $m['id']; ?>">Edit</button>
-                                        <a href="<?= site_url('owner/hapus_menu/' . $m['id']); ?>" class="btn btn-danger btn-sm" onclick="return confirm('Yakin ingin menghapus menu ini?')">Hapus</a>
+                                        <a href="<?= site_url('owner/hapus_menu/' . $m['id']); ?>" class="btn btn-danger btn-sm" onclick="return confirm('Yakin ingin menghapus menu ini beserta fotonya?')">Hapus</a>
                                     </td>
                                 </tr>
 
@@ -61,7 +69,7 @@
                                 <div class="modal fade" id="modalEdit<?= $m['id']; ?>" tabindex="-1">
                                     <div class="modal-dialog">
                                         <div class="modal-content">
-                                            <form action="<?= site_url('owner/edit_menu/' . $m['id']); ?>" method="POST">
+                                            <form action="<?= site_url('owner/edit_menu/' . $m['id']); ?>" method="POST" enctype="multipart/form-data">
                                                 <div class="modal-header">
                                                     <h5 class="modal-title">Edit Menu</h5>
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -79,6 +87,11 @@
                                                         <label class="form-label">Harga (Rp)</label>
                                                         <input type="number" name="harga" class="form-control" value="<?= $m['harga']; ?>" required>
                                                     </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Ganti Foto (Opsional)</label>
+                                                        <input type="file" name="foto" class="form-control">
+                                                        <small class="text-muted">Format: JPG, JPEG, PNG (Maks. 2MB)</small>
+                                                    </div>
                                                 </div>
                                                 <div class="modal-footer">
                                                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
@@ -91,7 +104,7 @@
                             <?php endforeach; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="5" class="text-center text-muted py-4">Belum ada data menu.</td>
+                                <td colspan="6" class="text-center text-muted py-4">Belum ada data menu.</td>
                             </tr>
                         <?php endif; ?>
                     </tbody>
@@ -104,7 +117,7 @@
     <div class="modal fade" id="modalTambah" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
-                <form action="<?= site_url('owner/tambah_menu'); ?>" method="POST">
+                <form action="<?= site_url('owner/tambah_menu'); ?>" method="POST" enctype="multipart/form-data">
                     <div class="modal-header">
                         <h5 class="modal-title">Tambah Menu Baru</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -121,6 +134,11 @@
                         <div class="mb-3">
                             <label class="form-label">Harga (Rp)</label>
                             <input type="number" name="harga" class="form-control" required placeholder="Contoh: 18000">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Foto Menu</label>
+                            <input type="file" name="foto" class="form-control">
+                            <small class="text-muted">Format: JPG, JPEG, PNG (Maks. 2MB)</small>
                         </div>
                     </div>
                     <div class="modal-footer">
