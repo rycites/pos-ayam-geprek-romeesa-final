@@ -6,11 +6,15 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
-    <!-- Navbar (Diubah dari hijau/success jadi merah/danger) -->
+    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
         <div class="container-fluid">
             <a class="navbar-brand fw-bold" href="#">Ayam Geprek Romeesa - Kasir</a>
-            <div class="d-flex">
+            <div class="d-flex align-items-center">
+                <!-- Tombol Pintasan ke Antrean Meja QR -->
+                <a href="<?= site_url('cashier/antrean_meja'); ?>" class="btn btn-warning btn-sm me-3 fw-bold">
+                    🔔 Antrean Meja QR
+                </a>
                 <span class="navbar-text text-white me-3">
                     Halo, <b><?= $this->session->userdata('nama'); ?></b>
                 </span>
@@ -37,19 +41,26 @@
         <div class="row">
             <!-- Daftar Menu (Kiri) -->
             <div class="col-md-8">
-                <div class="card shadow-sm p-3">
+                <div class="card shadow-sm p-3 border-0">
                     <h4 class="mb-3">Daftar Menu</h4>
                     <div class="row">
                         <?php foreach($menu as $m): ?>
                             <div class="col-md-4 mb-3">
                                 <div class="card h-100 shadow-sm border-0 bg-white">
-                                    <div class="card-body d-flex flex-column justify-content-between">
+                                    <!-- Menampilkan Foto Menu -->
+                                    <?php if(!empty($m['foto'])): ?>
+                                        <img src="<?= base_url('uploads/' . $m['foto']); ?>" alt="<?= $m['nama_menu']; ?>" class="card-img-top" style="height: 130px; object-fit: cover;">
+                                    <?php else: ?>
+                                        <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 130px; font-size: 12px;">Tanpa Foto</div>
+                                    <?php endif; ?>
+
+                                    <div class="card-body d-flex flex-column justify-content-between p-3">
                                         <div>
                                             <span class="badge bg-secondary mb-2" style="font-size: 10px;"><?= ucfirst($m['kategori']); ?></span>
-                                            <h5 class="card-title fs-6 fw-bold"><?= $m['nama_menu']; ?></h5>
-                                            <p class="card-text text-success fw-bold">Rp <?= number_format($m['harga'], 0, ',', '.'); ?></p>
+                                            <h5 class="card-title fs-6 fw-bold mb-1"><?= $m['nama_menu']; ?></h5>
+                                            <p class="card-text text-success fw-bold mb-2">Rp <?= number_format($m['harga'], 0, ',', '.'); ?></p>
                                         </div>
-                                        <a href="<?= site_url('cashier/add_cart/' . $m['id']); ?>" class="btn btn-outline-danger btn-sm w-100 mt-2">Pilih</a>
+                                        <a href="<?= site_url('cashier/add_cart/' . $m['id']); ?>" class="btn btn-outline-danger btn-sm w-100">Pilih</a>
                                     </div>
                                 </div>
                             </div>
@@ -60,11 +71,10 @@
 
             <!-- Keranjang Pesanan (Kanan) -->
             <div class="col-md-4">
-                <div class="card shadow-sm p-3">
+                <div class="card shadow-sm p-3 border-0">
                     <h4 class="mb-3">Keranjang Pesanan</h4>
                     <hr>
-                    
-                    <div style="max-height: 250px; overflow-y: auto;">
+                    <div style="max-height: 200px; overflow-y: auto;">
                         <ul class="list-group mb-3">
                             <?php 
                             $cart = $this->session->userdata('cart');
@@ -98,10 +108,42 @@
 
                     <?php if(!empty($cart)): ?>
                         <form action="<?= site_url('cashier/checkout'); ?>" method="POST">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold" style="font-size: 13px;">Uang Pembeli (Rp):</label>
-                                <input type="number" name="uang_bayar" class="form-control" required placeholder="Contoh: 50000">
+                            <!-- Input Nama Pemesan (Penting untuk Takeaway / Dine-in) -->
+                            <div class="mb-2">
+                                <label class="form-label fw-bold" style="font-size: 12px;">Nama Pemesan:</label>
+                                <input type="text" name="nama_pemesan" class="form-control form-control-sm" required placeholder="Contoh: Budi">
                             </div>
+
+                            <!-- Pilihan Jenis Pesanan Kasir (Takeaway / Dine-in Manual) -->
+                            <div class="mb-2">
+                                <label class="form-label fw-bold" style="font-size: 12px;">Jenis Pesanan:</label>
+                                <select name="jenis_pesanan" id="jenis_pesanan" class="form-select form-select-sm" required onchange="toggleMeja(this.value)">
+                                    <option value="Takeaway">Bungkus (Takeaway)</option>
+                                    <option value="Dine-in">Makan di Tempat (Dine-in)</option>
+                                </select>
+                            </div>
+
+                            <!-- Input Nomor Meja (Hanya muncul jika Dine-in dipilih) -->
+                            <div class="mb-2" id="box_meja" style="display: none;">
+                                <label class="form-label fw-bold" style="font-size: 12px;">Nomor Meja:</label>
+                                <input type="number" name="nomor_meja" class="form-control form-control-sm" placeholder="Contoh: 3">
+                            </div>
+
+                            <!-- Pilihan Metode Pembayaran -->
+                            <div class="mb-2">
+                                <label class="form-label fw-bold" style="font-size: 12px;">Metode Pembayaran:</label>
+                                <select name="metode_pembayaran" id="metode_pembayaran" class="form-select form-select-sm" onchange="toggleBayar(this.value)">
+                                    <option value="Cash">Cash (Tunai)</option>
+                                    <option value="QRIS">QRIS / Transfer</option>
+                                </select>
+                            </div>
+
+                            <!-- Input Uang Bayar (Hanya muncul jika Cash) -->
+                            <div class="mb-3" id="box_uang">
+                                <label class="form-label fw-bold" style="font-size: 12px;">Uang Pembeli (Rp):</label>
+                                <input type="number" name="uang_bayar" class="form-control form-control-sm" placeholder="Contoh: 50000">
+                            </div>
+
                             <button type="submit" class="btn btn-danger w-100">Proses Pembayaran</button>
                         </form>
                     <?php else: ?>
@@ -112,6 +154,27 @@
         </div>
     </div>
     
+    <!-- Script sederhana untuk mengatur kemunculan input meja & cash -->
+    <script>
+        function toggleMeja(val) {
+            let boxMeja = document.getElementById('box_meja');
+            if(val === 'Dine-in') {
+                boxMeja.style.display = 'block';
+            } else {
+                boxMeja.style.display = 'none';
+            }
+        }
+
+        function toggleBayar(val) {
+            let boxUang = document.getElementById('box_uang');
+            if(val === 'Cash') {
+                boxUang.style.display = 'block';
+            } else {
+                boxUang.style.display = 'none';
+            }
+        }
+    </script>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

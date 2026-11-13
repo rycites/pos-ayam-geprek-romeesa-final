@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Waktu pembuatan: 07 Okt 2026 pada 06.09
+-- Waktu pembuatan: 07 Okt 2026 pada 06.57
 -- Versi server: 10.4.32-MariaDB
 -- Versi PHP: 8.2.12
 
@@ -88,7 +88,16 @@ INSERT INTO `detail_transaksi` (`id_detail`, `id_transaksi`, `id_menu`, `jumlah`
 (45, 24, 2, 1, 17000, 'selesai'),
 (46, 24, 5, 1, 6000, 'selesai'),
 (47, 25, 1, 2, 36000, 'selesai'),
-(48, 25, 4, 1, 5000, 'selesai');
+(48, 25, 4, 1, 5000, 'selesai'),
+(49, 26, 2, 2, 34000, 'selesai'),
+(50, 27, 1, 1, 18000, 'selesai'),
+(51, 27, 10, 1, 30000, 'selesai'),
+(52, 28, 10, 1, 30000, 'selesai'),
+(53, 28, 1, 1, 18000, 'selesai'),
+(54, 29, 2, 2, 34000, 'selesai'),
+(55, 30, 1, 2, 36000, 'pending'),
+(56, 30, 5, 1, 6000, 'pending'),
+(57, 31, 5, 2, 12000, 'pending');
 
 -- --------------------------------------------------------
 
@@ -168,7 +177,13 @@ INSERT INTO `transaksi` (`id_transaksi`, `no_faktur`, `tanggal`, `total_bayar`, 
 (22, 'INV-1791189870', '2026-10-05 10:44:30', 52000, 52000, 0, 2, 'Takeaway (Badaruddin)', 'Takeaway', 'Lunas', 'QRIS'),
 (23, 'QR-20261005-578', '2026-10-05 10:44:56', 21000, 50000, 29000, 2, 'Meja 3 (Fadil)', 'Dine-in', 'Lunas', 'Cash'),
 (24, 'QR-20261006-500', '2026-10-06 03:37:05', 41000, 41000, 0, 2, 'Meja 3 (badar)', 'Dine-in', 'Lunas', 'QRIS'),
-(25, 'INV-1791250765', '2026-10-06 03:39:25', 41000, 50000, 9000, 2, 'Takeaway (badar)', 'Takeaway', 'Lunas', 'Cash');
+(25, 'INV-1791250765', '2026-10-06 03:39:25', 41000, 50000, 9000, 2, 'Takeaway (badar)', 'Takeaway', 'Lunas', 'Cash'),
+(26, 'QR-20261007-441', '2026-10-07 06:30:48', 34000, 0, 0, 0, 'Meja 1 (badar)', 'Dine-in', 'Pending', 'Cash'),
+(27, 'QR-20261007-479', '2026-10-07 06:36:55', 48000, 0, 0, 0, 'Meja 1 (Badar)', 'Dine-in', 'Pending', 'Cash'),
+(28, 'QR-20261007-611', '2026-10-07 06:42:43', 48000, 0, 0, 0, 'Meja 1 (Udin)', 'Dine-in', 'Pending', 'QRIS'),
+(29, 'QR-20261007-421', '2026-10-07 06:43:14', 34000, 0, 0, 0, 'Meja 1 (Ujang)', 'Dine-in', 'Pending', 'Cash'),
+(30, 'QR-20261007-526', '2026-10-07 06:47:57', 42000, 0, 0, 0, 'Meja 1 (Fajar)', 'Dine-in', 'Pending', 'QRIS'),
+(31, 'QR-20261007-223', '2026-10-07 06:48:21', 12000, 0, 0, 0, 'Meja 1 (Alpi)', 'Dine-in', 'Pending', 'Cash');
 
 -- --------------------------------------------------------
 
@@ -231,7 +246,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT untuk tabel `detail_transaksi`
 --
 ALTER TABLE `detail_transaksi`
-  MODIFY `id_detail` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
+  MODIFY `id_detail` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=58;
 
 --
 -- AUTO_INCREMENT untuk tabel `menu`
@@ -243,7 +258,7 @@ ALTER TABLE `menu`
 -- AUTO_INCREMENT untuk tabel `transaksi`
 --
 ALTER TABLE `transaksi`
-  MODIFY `id_transaksi` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+  MODIFY `id_transaksi` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- AUTO_INCREMENT untuk tabel `users`
