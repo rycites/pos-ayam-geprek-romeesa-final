@@ -7,7 +7,7 @@
     <meta http-equiv="refresh" content="10">
 </head>
 <body class="bg-dark text-white">
-    <!-- Navbar (Sudah Merah) -->
+    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
         <div class="container-fluid">
             <a class="navbar-brand fw-bold" href="#">Kitchen Dashboard - Ayam Geprek Romeesa</a>
@@ -29,17 +29,32 @@
                 <?php foreach($pesanan as $p): ?>
                     <div class="col-md-4 mb-3">
                         <div class="card bg-secondary text-white border-0 shadow-sm h-100">
-                            <div class="card-body d-flex flex-column justify-content-between">
+                            <!-- Menampilkan Foto Menu di Dapur -->
+                            <?php if(!empty($p['foto'])): ?>
+                                <img src="<?= base_url('uploads/' . $p['foto']); ?>" alt="<?= $p['nama_menu']; ?>" class="card-img-top" style="height: 140px; object-fit: cover;">
+                            <?php else: ?>
+                                <div class="bg-dark text-light d-flex align-items-center justify-content-center" style="height: 140px; font-size: 12px;">Tanpa Foto</div>
+                            <?php endif; ?>
+
+                            <div class="card-body d-flex flex-column justify-content-between p-3">
                                 <div>
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <span class="badge bg-warning text-dark"><?= $p['no_faktur']; ?></span>
                                         <small class="text-light"><?= date('H:i:s', strtotime($p['tanggal'])); ?></small>
                                     </div>
-                                    <h4 class="card-title fw-bold text-warning"><?= $p['nama_menu']; ?></h4>
-                                    <p class="card-text fs-5">Jumlah: <span class="badge bg-danger"><?= $p['jumlah']; ?> Porsi</span></p>
-                                    <p class="card-text mb-2">
+                                    
+                                    <!-- Menampilkan Nomor Meja & Nama Pemesan -->
+                                    <?php if(!empty($p['nomor_meja'])): ?>
+                                        <div class="alert alert-danger py-1 px-2 mb-2 text-center fw-bold" style="font-size: 13px;">
+                                            📍 <?= $p['nomor_meja']; ?>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <h4 class="card-title fs-5 fw-bold text-warning mb-2"><?= $p['nama_menu']; ?></h4>
+                                    <p class="card-text fs-6 mb-2">Jumlah: <span class="badge bg-danger"><?= $p['jumlah']; ?> Porsi</span></p>
+                                    <p class="card-text mb-2" style="font-size: 13px;">
                                         <strong>Catatan Khusus:</strong><br>
-                                        <span class="text-info"><?= $p['catatan_khusus'] ? $p['catatan_khusus'] : '-'; ?></span>
+                                        <span class="text-info"><?= !empty($p['catatan_khusus']) ? $p['catatan_khusus'] : '-'; ?></span>
                                     </p>
                                 </div>
                                 <a href="<?= site_url('kitchen/selesai/' . $p['id_detail']); ?>" class="btn btn-success w-100 mt-3 btn-sm">Selesai / Hidangkan</a>

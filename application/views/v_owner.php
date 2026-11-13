@@ -20,7 +20,7 @@
     </nav>
 
     <!-- Content -->
-    <div class="container mt-4">
+    <div class="container mt-4 mb-5">
         <div class="row mb-4">
             <div class="col-md-6 mb-3">
                 <div class="card border-0 shadow-sm bg-success text-white p-3">
@@ -39,7 +39,12 @@
         <div class="card shadow-sm border-0 p-3">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h4 class="mb-0">Riwayat Transaksi Penjualan</h4>
-                <a href="<?= site_url('owner/menu'); ?>" class="btn btn-danger btn-sm">Kelola Menu Makanan</a>
+                <div>
+                    <!-- Tombol Menuju Halaman Filter & Cetak Laporan -->
+                    <a href="<?= site_url('owner/laporan'); ?>" class="btn btn-dark btn-sm me-2">📊 Filter & Cetak Laporan</a>
+                    <!-- Tombol Kelola Menu -->
+                    <a href="<?= site_url('owner/menu'); ?>" class="btn btn-danger btn-sm">Kelola Menu Makanan</a>
+                </div>
             </div>
             <div class="table-responsive">
                 <table class="table table-striped table-hover align-middle">
