@@ -4,161 +4,286 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pesan Menu - Meja <?= $no_meja; ?> | Ayam Geprek Romeesa</title>
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- FontAwesome untuk ikon keranjang -->
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-bottom: 90px;
+        }
+        .navbar-brand {
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        .card {
+            border-radius: 1rem;
+        }
+        .floating-cart {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #ffffff;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+            z-index: 1030;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            padding: 15px 20px;
+        }
+    </style>
 </head>
-<body class="bg-light" style="padding-bottom: 80px;"> <!-- Padding bawah agar konten tidak tertutup floating bar -->
-    
-    <!-- Navbar Atas -->
-    <nav class="navbar navbar-dark bg-danger shadow-sm sticky-top">
-        <div class="container-fluid">
-            <span class="navbar-brand mb-0 h1 fw-bold fs-5">🔥 Ayam Geprek Romeesa</span>
-            <span class="badge bg-warning text-dark fs-6">Meja <?= $no_meja; ?></span>
+<body>
+
+    <!-- Header / Navbar Pelanggan -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm sticky-top py-3">
+        <div class="container d-flex justify-content-between align-items-center">
+            <span class="navbar-brand text-white fs-5 mb-0">
+                <i class="fa-solid fa-utensils me-2"></i> Ayam Geprek Romeesa
+            </span>
+            <span class="badge bg-white text-danger px-3 py-2 rounded-pill fw-bold shadow-sm fs-6">
+                <i class="fa-solid fa-chair me-1"></i> Meja <?= $no_meja; ?>
+            </span>
         </div>
     </nav>
 
-    <div class="container mt-3 mb-4">
+    <div class="container my-4">
+        <!-- Flash Message -->
         <?php if($this->session->flashdata('success')): ?>
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <?= $this->session->flashdata('success'); ?>
+            <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 rounded-4 mb-4" role="alert">
+                <i class="fa-solid fa-circle-check me-2"></i> <?= $this->session->flashdata('success'); ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         <?php endif; ?>
         <?php if($this->session->flashdata('error')): ?>
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <?= $this->session->flashdata('error'); ?>
+            <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 rounded-4 mb-4" role="alert">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i> <?= $this->session->flashdata('error'); ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         <?php endif; ?>
 
-        <!-- Daftar Menu -->
-        <h5 class="fw-bold mb-3">Daftar Menu</h5>
-        <div class="row">
-            <?php foreach($menu as $m): ?>
-                <div class="col-6 col-md-4 mb-3">
-                    <div class="card h-100 shadow-sm border-0">
-                        <?php if(!empty($m['foto'])): ?>
-                            <img src="<?= base_url('uploads/' . $m['foto']); ?>" class="card-img-top" style="height: 110px; object-fit: cover;" alt="<?= $m['nama_menu']; ?>">
+        <div class="row g-4">
+            <!-- DAFTAR MENU -->
+            <div class="col-lg-7">
+                <div class="card shadow-sm border-0 p-4 bg-white mb-4">
+                    <h5 class="fw-bold text-dark mb-3">
+                        <i class="fa-solid fa-book-open text-danger me-2"></i> Pilih Menu Favorit Anda
+                    </h5>
+                    <p class="text-muted small mb-4">Silakan pilih menu yang diinginkan untuk dimasukkan ke dalam keranjang pesanan.</p>
+
+                    <div class="row g-3">
+                        <?php if(!empty($menu)): ?>
+                            <?php foreach($menu as $m): ?>
+                                <!-- Diubah menjadi col-6 agar di HP tampil 2 kolom berdampingan secara rapi -->
+                                <div class="col-6 col-md-4">
+                                    <div class="card h-100 shadow-sm border border-light rounded-4 bg-white overflow-hidden">
+                                        <?php if(!empty($m['foto'])): ?>
+                                            <img src="<?= base_url('uploads/' . $m['foto']); ?>" alt="<?= $m['nama_menu']; ?>" class="card-img-top" style="height: 110px; object-fit: cover;">
+                                        <?php else: ?>
+                                            <div class="bg-light text-secondary d-flex align-items-center justify-content-center" style="height: 110px; font-size: 12px;">
+                                                <i class="fa-solid fa-image fa-2x opacity-50"></i>
+                                            </div>
+                                        <?php endif; ?>
+
+                                        <div class="card-body d-flex flex-column justify-content-between p-3">
+                                            <div>
+                                                <span class="badge bg-danger bg-opacity-10 text-danger mb-2 px-2 py-1 rounded-pill" style="font-size: 10px;"><?= ucfirst($m['kategori'] ?? 'Menu'); ?></span>
+                                                <h6 class="card-title fw-bold text-dark mb-1 text-truncate" title="<?= $m['nama_menu']; ?>"><?= $m['nama_menu']; ?></h6>
+                                                <p class="card-text text-success fw-bold mb-3" style="font-size: 14px;">Rp <?= number_format($m['harga'], 0, ',', '.'); ?></p>
+                                            </div>
+                                            <a href="<?= site_url('pelanggan/add_cart/' . $m['id'] . '/' . $no_meja); ?>" class="btn btn-outline-danger btn-sm w-100 rounded-pill fw-semibold">
+                                                <i class="fa-solid fa-plus me-1"></i> Tambah
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
                         <?php else: ?>
-                            <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 110px; font-size: 11px;">Tanpa Foto</div>
-                        <?php endif; ?>
-                        
-                        <div class="card-body p-2 d-flex flex-column justify-content-between">
-                            <div>
-                                <h6 class="card-title fs-6 fw-bold mb-1"><?= $m['nama_menu']; ?></h6>
-                                <p class="text-success fw-bold mb-2" style="font-size: 13px;">Rp <?= number_format($m['harga'], 0, ',', '.'); ?></p>
+                            <div class="col-12 text-center py-5 text-muted">
+                                <i class="fa-solid fa-box-open fa-3x opacity-25 mb-3"></i>
+                                <p class="mb-0">Belum ada menu yang tersedia saat ini.</p>
                             </div>
-                            <a href="<?= site_url('pelanggan/add_cart/' . $m['id'] . '/' . $no_meja); ?>" class="btn btn-outline-danger btn-sm w-100 fw-bold">+ Tambah</a>
-                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
-            <?php endforeach; ?>
-        </div>
-    </div>
-
-    <!-- ================= FLOATING BOTTOM BAR (ALA GACOAN) ================= -->
-    <?php 
-    $cart = $this->session->userdata('cart_pelanggan');
-    $total_qty = 0;
-    $grand_total = 0;
-    if(!empty($cart)) {
-        foreach($cart as $item) {
-            $total_qty += $item['qty'];
-            $grand_total += $item['subtotal'];
-        }
-    }
-    ?>
-
-    <div class="fixed-bottom bg-white border-top shadow-lg p-3">
-        <div class="container d-flex justify-content-between align-items-center">
-            <div>
-                <span class="text-muted small d-block">Total Pesanan</span>
-                <h5 class="text-success fw-bold mb-0">Rp <?= number_format($grand_total, 0, ',', '.'); ?> <span class="badge bg-danger fs-6 ms-1"><?= $total_qty; ?> item</span></h5>
             </div>
-            <div>
-                <?php if(!empty($cart)): ?>
-                    <button type="button" class="btn btn-danger fw-bold px-4 py-2 shadow" data-bs-toggle="modal" data-bs-target="#modalCheckout">
-                        <i class="fa-solid fa-cart-shopping me-2"></i> Lihat Keranjang
-                    </button>
-                <?php else: ?>
-                    <button type="button" class="btn btn-secondary fw-bold px-4 py-2" disabled>
-                        <i class="fa-solid fa-cart-shopping me-2"></i> Keranjang Kosong
-                    </button>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
 
-    <!-- ================= MODAL KERANJANG & CHECKOUT ================= -->
-    <div class="modal fade" id="modalCheckout" tabindex="-1" aria-labelledby="modalCheckoutLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title fw-bold" id="modalCheckoutLabel"><i class="fa-solid fa-receipt me-2"></i> Keranjang Pesanan Anda</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <!-- List Item di Keranjang -->
-                    <ul class="list-group mb-3">
-                        <?php if(!empty($cart)): foreach($cart as $item): ?>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="my-0 fw-bold"><?= $item['nama_menu']; ?></h6>
-                                    <small class="text-muted"><?= $item['qty']; ?> x Rp <?= number_format($item['harga'], 0, ',', '.'); ?></small>
-                                </div>
-                                <div class="text-end">
-                                    <span class="text-success fw-bold">Rp <?= number_format($item['subtotal'], 0, ',', '.'); ?></span><br>
-                                    <a href="<?= site_url('pelanggan/remove_cart/' . $item['id'] . '/' . $no_meja); ?>" class="text-danger small text-decoration-none">Hapus</a>
-                                </div>
-                            </li>
-                        <?php endforeach; endif; ?>
-                    </ul>
+            <!-- KERANJANG & CHECKOUT (DESKTOP VIEW) -->
+            <div class="col-lg-5 d-none d-lg-block">
+                <div class="card shadow-sm border-0 p-4 bg-white sticky-top" style="top: 90px;">
+                    <h5 class="fw-bold text-dark mb-3">
+                        <i class="fa-solid fa-cart-shopping text-danger me-2"></i> Keranjang Meja <?= $no_meja; ?>
+                    </h5>
+                    <hr class="text-secondary opacity-25">
 
-                    <div class="d-flex justify-content-between mb-3 px-2">
-                        <h5 class="fw-bold">Total Pembayaran:</h5>
-                        <h5 class="text-success fw-bold">Rp <?= number_format($grand_total, 0, ',', '.'); ?></h5>
+                    <div style="max-height: 220px; overflow-y: auto;" class="pe-1">
+                        <ul class="list-group list-group-flush mb-3">
+                            <?php 
+                            $cart = $this->session->userdata('cart_pelanggan');
+                            $grand_total = 0;
+                            $total_qty = 0;
+                            if(!empty($cart)): 
+                                foreach($cart as $item): 
+                                    $grand_total += $item['subtotal'];
+                                    $total_qty += $item['qty'];
+                            ?>
+                                <li class="list-group-item px-0 d-flex justify-content-between align-items-center bg-transparent">
+                                    <div>
+                                        <h6 class="my-0 fs-6 fw-bold text-dark"><?= $item['nama_menu']; ?></h6>
+                                        <small class="text-muted"><?= $item['qty']; ?>x @ Rp <?= number_format($item['harga'], 0, ',', '.'); ?></small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="text-success fw-bold fs-6">Rp <?= number_format($item['subtotal'], 0, ',', '.'); ?></span>
+                                        <br>
+                                        <a href="<?= site_url('pelanggan/remove_cart/' . $item['id'] . '/' . $no_meja); ?>" class="text-danger small text-decoration-none fw-semibold" style="font-size: 11px;">
+                                            <i class="fa-solid fa-trash-can me-1"></i> Hapus
+                                        </a>
+                                    </div>
+                                </li>
+                            <?php endforeach; else: ?>
+                                <div class="text-center py-4 text-muted">
+                                    <i class="fa-solid fa-basket-shopping fa-2x opacity-25 mb-2"></i>
+                                    <p class="mb-0 small">Keranjang masih kosong</p>
+                                </div>
+                            <?php endif; ?>
+                        </ul>
+                    </div>
+                    <hr class="text-secondary opacity-25">
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="fw-bold text-secondary">Total Pembayaran:</span>
+                        <h4 class="text-success fw-extrabold mb-0">Rp <?= number_format($grand_total, 0, ',', '.'); ?></h4>
                     </div>
 
-                    <hr>
-
-                    <!-- Form Input Nama & Pembayaran -->
                     <?php if(!empty($cart)): ?>
                         <form action="<?= site_url('pelanggan/checkout/' . $no_meja); ?>" method="POST">
                             <div class="mb-3">
-                                <label class="form-label fw-bold small">Nama Pemesan:</label>
-                                <input type="text" name="nama_pemesan" class="form-control" required placeholder="Masukkan nama Anda">
+                                <label class="form-label fw-bold small text-secondary">Nama Anda:</label>
+                                <input type="text" name="nama_pemesan" class="form-control rounded-3 py-2" required placeholder="Contoh: Andi">
                             </div>
-
                             <div class="mb-3">
-                                <label class="form-label fw-bold small">Pilih Metode Pembayaran:</label>
-                                <select name="metode_pembayaran" id="metode_pembayaran" class="form-select" required onchange="toggleQrisInfo(this.value)">
-                                    <option value="Cash">Bayar Tunai di Kasir (Cash)</option>
-                                    <option value="QRIS">QRIS / Transfer (Scan dari HP)</option>
+                                <label class="form-label fw-bold small text-secondary">Metode Pembayaran:</label>
+                                <select name="metode_pembayaran" id="metode_pembayaran_desktop" class="form-select rounded-3 py-2" onchange="toggleQris(this.value, 'desktop')">
+                                    <option value="Cash">Cash (Bayar ke Kasir)</option>
+                                    <option value="QRIS">QRIS / Transfer (Langsung Proses)</option>
                                 </select>
                             </div>
 
-                            <!-- Kotak Simulasi QRIS -->
-                            <div id="box_qris_info" class="card bg-light border p-3 mb-3 text-center" style="display: none;">
-                                <h6 class="fw-bold text-danger mb-2">Simulasi QRIS Romeesa</h6>
-                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=SIMULASI-PAYMENT-QRIS-AYAM-GEPREK-ROMEESA" alt="QRIS Dummy" class="img-fluid mx-auto mb-2" style="max-width: 140px;">
-                                <p class="text-muted small mb-1">Silakan scan QR di atas untuk simulasi pembayaran.</p>
-                                <p class="text-danger small fw-bold mb-0">Atau transfer via DANA: 0812-3456-7890 (a.n Romeesa)</p>
+                            <!-- Box QRIS Otomatis (Desktop) -->
+                            <div class="mb-4 text-center p-3 bg-light rounded-4 border" id="box_qris_desktop" style="display: none;">
+                                <p class="fw-bold text-dark small mb-2"><i class="fa-solid fa-qrcode text-danger me-1"></i> Scan QRIS di Bawah Ini:</p>
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=AYAM-GEPREK-ROMEESA-MEJA-<?= $no_meja; ?>" alt="QRIS Code" class="img-fluid rounded-3 mb-2 bg-white p-2 border" style="width: 130px; height: 130px;">
+                                <small class="text-muted d-block" style="font-size: 11px;">Silakan scan pakai GoPay, OVO, Dana, atau m-Banking Anda.</small>
                             </div>
 
-                            <button type="submit" class="btn btn-danger w-100 fw-bold py-2 shadow-sm">Kirim Pesanan ke Kasir</button>
+                            <button type="submit" class="btn btn-danger w-100 rounded-pill py-2.5 fw-bold shadow-sm">
+                                <i class="fa-solid fa-paper-plane me-2"></i> Kirim Pesanan Sekarang
+                            </button>
                         </form>
+                    <?php else: ?>
+                        <button class="btn btn-secondary w-100 rounded-pill py-2.5 fw-bold opacity-50" disabled>
+                            Kirim Pesanan Sekarang
+                        </button>
                     <?php endif; ?>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Script JavaScript -->
+    <!-- FLOATING CART / KERANJANG MENGAMBANG KHUSUS MOBILE -->
+    <?php 
+    $cart = $this->session->userdata('cart_pelanggan');
+    $grand_total = 0;
+    $total_qty = 0;
+    if(!empty($cart)) {
+        foreach($cart as $item) {
+            $grand_total += $item['subtotal'];
+            $total_qty += $item['qty'];
+        }
+    }
+    ?>
+    <?php if(!empty($cart)): ?>
+        <div class="floating-cart d-lg-none">
+            <div class="container d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="badge bg-danger rounded-pill px-2 py-1"><?= $total_qty; ?> Item</span>
+                    <h5 class="fw-bold text-dark mb-0 fs-6">Rp <?= number_format($grand_total, 0, ',', '.'); ?></h5>
+                </div>
+                <button type="button" class="btn btn-danger rounded-pill px-4 py-2 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCheckout">
+                    <i class="fa-solid fa-cart-shopping me-2"></i> Lihat Keranjang & Checkout
+                </button>
+            </div>
+        </div>
+
+        <!-- MODAL CHECKOUT MOBILE -->
+        <div class="modal fade" id="modalCheckout" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content rounded-4 border-0 p-3">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-bold text-dark">
+                            <i class="fa-solid fa-cart-shopping text-danger me-2"></i> Keranjang Pesanan
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <ul class="list-group list-group-flush mb-3">
+                            <?php foreach($cart as $item): ?>
+                                <li class="list-group-item px-0 d-flex justify-content-between align-items-center bg-transparent">
+                                    <div>
+                                        <h6 class="my-0 fs-6 fw-bold text-dark"><?= $item['nama_menu']; ?></h6>
+                                        <small class="text-muted"><?= $item['qty']; ?>x @ Rp <?= number_format($item['harga'], 0, ',', '.'); ?></small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="text-success fw-bold fs-6">Rp <?= number_format($item['subtotal'], 0, ',', '.'); ?></span>
+                                        <br>
+                                        <a href="<?= site_url('pelanggan/remove_cart/' . $item['id'] . '/' . $no_meja); ?>" class="text-danger small text-decoration-none fw-semibold">Hapus</a>
+                                    </div>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <hr class="text-secondary opacity-25">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="fw-bold text-secondary">Total Pembayaran:</span>
+                            <h4 class="text-success fw-extrabold mb-0">Rp <?= number_format($grand_total, 0, ',', '.'); ?></h4>
+                        </div>
+
+                        <form action="<?= site_url('pelanggan/checkout/' . $no_meja); ?>" method="POST">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-secondary">Nama Anda:</label>
+                                <input type="text" name="nama_pemesan" class="form-control rounded-3 py-2" required placeholder="Contoh: Andi">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-secondary">Metode Pembayaran:</label>
+                                <select name="metode_pembayaran" id="metode_pembayaran_mobile" class="form-select rounded-3 py-2" onchange="toggleQris(this.value, 'mobile')">
+                                    <option value="Cash">Cash (Bayar ke Kasir)</option>
+                                    <option value="QRIS">QRIS / Transfer (Langsung Proses)</option>
+                                </select>
+                            </div>
+
+                            <!-- Box QRIS Otomatis (Mobile Modal) -->
+                            <div class="mb-4 text-center p-3 bg-light rounded-4 border" id="box_qris_mobile" style="display: none;">
+                                <p class="fw-bold text-dark small mb-2"><i class="fa-solid fa-qrcode text-danger me-1"></i> Scan QRIS di Bawah Ini:</p>
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=AYAM-GEPREK-ROMEESA-MEJA-<?= $no_meja; ?>" alt="QRIS Code" class="img-fluid rounded-3 mb-2 bg-white p-2 border" style="width: 130px; height: 130px;">
+                                <small class="text-muted d-block" style="font-size: 11px;">Silakan scan pakai GoPay, OVO, Dana, atau m-Banking Anda.</small>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-danger w-100 rounded-pill py-2.5 fw-bold shadow-sm">
+                                <i class="fa-solid fa-paper-plane me-2"></i> Kirim Pesanan Sekarang
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <!-- Script Interaktif untuk QRIS -->
     <script>
-        function toggleQrisInfo(val) {
-            let boxQris = document.getElementById('box_qris_info');
-            if (val === 'QRIS') {
+        function toggleQris(val, type) {
+            let boxQris = document.getElementById('box_qris_' + type);
+            if(val === 'QRIS') {
                 boxQris.style.display = 'block';
             } else {
                 boxQris.style.display = 'none';
@@ -166,6 +291,7 @@
         }
     </script>
 
+    <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
