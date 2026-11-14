@@ -1,75 +1,73 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <title>Dashboard Dapur - Ayam Geprek Romeesa</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <meta http-equiv="refresh" content="10">
-</head>
-<body class="bg-dark text-white">
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
-        <div class="container-fluid">
-            <a class="navbar-brand fw-bold" href="#">Kitchen Dashboard - Ayam Geprek Romeesa</a>
-            <div class="d-flex">
-                <span class="navbar-text text-white me-3">
-                    Halo, Chef <b><?= $this->session->userdata('nama'); ?></b> (Auto-refresh 10s)
-                </span>
-                <a href="<?= site_url('auth/logout'); ?>" class="btn btn-outline-light btn-sm">Logout</a>
-            </div>
+<div class="container-fluid px-4">
+    <div class="card border-0 shadow-sm rounded-4 bg-white mb-4">
+        <div class="card-header bg-white py-3 px-4 border-bottom border-light">
+            <h5 class="fw-bold text-dark mb-1 fs-6">
+                <i class="fa-solid fa-fire-burner text-danger me-2"></i> Pesanan Yang Harus Dimasak
+            </h5>
+            <p class="text-muted small mb-0" style="font-size: 13px;">Daftar pesanan aktif dari kasir dan meja QR yang perlu segera disiapkan.</p>
         </div>
-    </nav>
 
-    <!-- Content -->
-    <div class="container mt-4">
-        <h3 class="mb-4">Daftar Pesanan Masuk (Live Kitchen)</h3>
-        
-        <div class="row">
-            <?php if(!empty($pesanan)): ?>
-                <?php foreach($pesanan as $p): ?>
-                    <div class="col-md-4 mb-3">
-                        <div class="card bg-secondary text-white border-0 shadow-sm h-100">
-                            <!-- Menampilkan Foto Menu di Dapur -->
-                            <?php if(!empty($p['foto'])): ?>
-                                <img src="<?= base_url('uploads/' . $p['foto']); ?>" alt="<?= $p['nama_menu']; ?>" class="card-img-top" style="height: 140px; object-fit: cover;">
-                            <?php else: ?>
-                                <div class="bg-dark text-light d-flex align-items-center justify-content-center" style="height: 140px; font-size: 12px;">Tanpa Foto</div>
-                            <?php endif; ?>
-
-                            <div class="card-body d-flex flex-column justify-content-between p-3">
-                                <div>
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span class="badge bg-warning text-dark"><?= $p['no_faktur']; ?></span>
-                                        <small class="text-light"><?= date('H:i:s', strtotime($p['tanggal'])); ?></small>
-                                    </div>
-                                    
-                                    <!-- Menampilkan Nomor Meja & Nama Pemesan -->
-                                    <?php if(!empty($p['nomor_meja'])): ?>
-                                        <div class="alert alert-danger py-1 px-2 mb-2 text-center fw-bold" style="font-size: 13px;">
-                                            📍 <?= $p['nomor_meja']; ?>
+        <div class="card-body p-4">
+            <div class="row g-3">
+                <?php if (!empty($pesanan)): ?>
+                    <?php foreach ($pesanan as $p): ?>
+                        <div class="col-xl-4 col-md-6 col-12">
+                            <div class="card border border-light shadow-sm rounded-4 h-100 overflow-hidden bg-white">
+                                <div class="card-body p-3 d-flex flex-column justify-content-between">
+                                    <div>
+                                        <!-- Header Kartu: No Faktur & Meja -->
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <span class="badge bg-danger bg-opacity-10 text-danger px-2.5 py-1.5 rounded-pill fw-bold" style="font-size: 12px;">
+                                                #<?= isset($p['no_faktur']) ? $p['no_faktur'] : '-'; ?>
+                                            </span>
+                                            <span class="badge bg-warning bg-opacity-10 text-dark px-2.5 py-1.5 rounded-pill fw-semibold border border-warning border-opacity-25 text-truncate" style="max-width: 55%; font-size: 12px;">
+                                                <i class="fa-solid fa-chair me-1 text-danger"></i> <?= isset($p['nomor_meja']) ? $p['nomor_meja'] : '-'; ?>
+                                            </span>
                                         </div>
-                                    <?php endif; ?>
 
-                                    <h4 class="card-title fs-5 fw-bold text-warning mb-2"><?= $p['nama_menu']; ?></h4>
-                                    <p class="card-text fs-6 mb-2">Jumlah: <span class="badge bg-danger"><?= $p['jumlah']; ?> Porsi</span></p>
-                                    <p class="card-text mb-2" style="font-size: 13px;">
-                                        <strong>Catatan Khusus:</strong><br>
-                                        <span class="text-info"><?= !empty($p['catatan_khusus']) ? $p['catatan_khusus'] : '-'; ?></span>
-                                    </p>
+                                        <!-- Detail Menu & Foto -->
+                                        <div class="d-flex align-items-center mb-3">
+                                            <?php if (!empty($p['foto'])): ?>
+                                                <img src="<?= base_url('uploads/' . $p['foto']); ?>" alt="Menu" class="rounded-3 me-3 shadow-sm" style="width: 55px; height: 55px; object-fit: cover; flex-shrink: 0;">
+                                            <?php else: ?>
+                                                <div class="bg-light rounded-3 me-3 d-flex align-items-center justify-content-center text-secondary" style="width: 55px; height: 55px; flex-shrink: 0;">
+                                                    <i class="fa-solid fa-utensils"></i>
+                                                </div>
+                                            <?php endif; ?>
+                                            
+                                            <div class="flex-grow-1 overflow-hidden">
+                                                <h6 class="fw-bold text-dark mb-1 text-truncate" style="font-size: 14px;" title="<?= isset($p['nama_menu']) ? $p['nama_menu'] : ''; ?>">
+                                                    <?= isset($p['nama_menu']) ? $p['nama_menu'] : 'Menu Tidak Ditemukan'; ?>
+                                                </h6>
+                                                <span class="text-muted" style="font-size: 13px;">
+                                                    Jumlah: <strong class="text-danger"><?= isset($p['qty']) ? $p['qty'] : (isset($p['jumlah']) ? $p['jumlah'] : '1'); ?> Porsi</strong>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Waktu Pesan -->
+                                        <p class="text-muted mb-3" style="font-size: 12px;">
+                                            <i class="fa-regular fa-clock me-1 text-secondary"></i> Waktu: <?= isset($p['tanggal']) ? date('H:i', strtotime($p['tanggal'])) : '-'; ?> WIB
+                                        </p>
+                                    </div>
+
+                                    <!-- Tombol Selesai -->
+                                    <a href="<?= site_url('kitchen/selesai/' . (isset($p['id_detail']) ? $p['id_detail'] : '')); ?>" class="btn btn-dark w-100 rounded-pill py-2 fw-semibold shadow-sm d-flex align-items-center justify-content-center" style="font-size: 13px;">
+                                        <i class="fa-solid fa-circle-check me-2 text-success"></i> Tandai Selesai / Siap Saji
+                                    </a>
                                 </div>
-                                <a href="<?= site_url('kitchen/selesai/' . $p['id_detail']); ?>" class="btn btn-success w-100 mt-3 btn-sm">Selesai / Hidangkan</a>
                             </div>
                         </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="col-12 text-center py-5 text-muted">
+                        <div class="py-5">
+                            <i class="fa-solid fa-mug-hot fa-3x text-secondary opacity-25 mb-3"></i>
+                            <p class="mb-0 fw-medium text-secondary" style="font-size: 14px;">Belum ada pesanan aktif di dapur saat ini. Semua pesanan sudah selesai!</p>
+                        </div>
                     </div>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <div class="col-12 text-center text-muted py-5">
-                    <h4>Belum ada pesanan aktif di dapur. Kerja bagus!</h4>
-                </div>
-            <?php endif; ?>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+</div>
