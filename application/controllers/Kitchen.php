@@ -18,7 +18,6 @@ class Kitchen extends CI_Controller {
 
     public function index()
     {
-        // Ditambahkan transaksi.nomor_meja di dalam select
         $this->db->select('detail_transaksi.*, menu.nama_menu, menu.foto, transaksi.no_faktur, transaksi.tanggal, transaksi.nomor_meja');
         $this->db->from('detail_transaksi');
         $this->db->join('menu', 'menu.id = detail_transaksi.id_menu');
@@ -28,8 +27,12 @@ class Kitchen extends CI_Controller {
         $this->db->limit(20);
         $data['pesanan'] = $this->db->get()->result_array();
 
-        // Menggunakan v_kitchen sesuai nama file view kamu
-        $this->load->view('v_kitchen', $data);
+        // Integrasi Layout Sidebar Dapur
+        $data['title'] = 'Dapur - Ayam Geprek Romeesa';
+        $data['page_title'] = 'Daftar Antrean Pesanan Masuk';
+        $data['subview'] = 'v_kitchen';
+
+        $this->load->view('templates/v_sidebar_kitchen', $data);
     }
 
     public function selesai($id_detail)

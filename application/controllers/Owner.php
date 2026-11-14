@@ -32,7 +32,12 @@ class Owner extends CI_Controller {
         $data['total_pendapatan'] = $stats['total_pendapatan'] ? $stats['total_pendapatan'] : 0;
         $data['total_transaksi'] = $stats['total_transaksi'] ? $stats['total_transaksi'] : 0;
 
-        $this->load->view('v_owner', $data);
+        // Integrasi dengan Master Layout Sidebar Kiri Minimalis
+        $data['title'] = 'Dashboard Owner - Ayam Geprek Romeesa';
+        $data['page_title'] = 'Dashboard & Ringkasan Penjualan';
+        $data['subview'] = 'v_owner';
+        
+        $this->load->view('templates/v_sidebar', $data);
     }
 
     // ================= FITUR LAPORAN & FILTER =================
@@ -50,7 +55,6 @@ class Owner extends CI_Controller {
         if ($jenis == 'harian' && !empty($tanggal)) {
             $this->db->where('DATE(transaksi.tanggal)', $tanggal);
         } elseif ($jenis == 'bulanan' && !empty($bulan)) {
-            // PERBAIKAN: Ditambahkan tanda '=' di sini
             $this->db->where('DATE_FORMAT(transaksi.tanggal, "%Y-%m") =', $bulan);
         } elseif ($jenis == 'mingguan') {
             $this->db->where('transaksi.tanggal >=', date('Y-m-d', strtotime('-7 days')));
@@ -60,7 +64,12 @@ class Owner extends CI_Controller {
         $data['laporan'] = $this->db->get()->result_array();
         $data['jenis'] = $jenis;
 
-        $this->load->view('v_owner_laporan', $data);
+        // Integrasi dengan Layout Sidebar Kiri
+        $data['title'] = 'Laporan Keuangan - Ayam Geprek Romeesa';
+        $data['page_title'] = 'Laporan Keuangan & Transaksi';
+        $data['subview'] = 'v_owner_laporan';
+
+        $this->load->view('templates/v_sidebar', $data);
     }
 
     public function cetak_laporan()
@@ -72,11 +81,10 @@ class Owner extends CI_Controller {
         $this->db->select('transaksi.*, users.nama as nama_kasir');
         $this->db->from('transaksi');
         $this->db->join('users', 'users.id = transaksi.id_kasir', 'left');
-
+        
         if ($jenis == 'harian' && !empty($tanggal)) {
             $this->db->where('DATE(transaksi.tanggal)', $tanggal);
         } elseif ($jenis == 'bulanan' && !empty($bulan)) {
-            // PERBAIKAN: Ditambahkan tanda '=' di sini juga
             $this->db->where('DATE_FORMAT(transaksi.tanggal, "%Y-%m") =', $bulan);
         } elseif ($jenis == 'mingguan') {
             $this->db->where('transaksi.tanggal >=', date('Y-m-d', strtotime('-7 days')));
@@ -85,6 +93,7 @@ class Owner extends CI_Controller {
         $this->db->order_by('transaksi.tanggal', 'ASC');
         $data['laporan'] = $this->db->get()->result_array();
         
+        // Halaman cetak/print berdiri sendiri (tidak pakai sidebar)
         $this->load->view('v_owner_laporan_print', $data);
     }
 
@@ -94,7 +103,13 @@ class Owner extends CI_Controller {
     public function menu()
     {
         $data['menu'] = $this->db->get('menu')->result_array();
-        $this->load->view('v_owner_menu', $data);
+        
+        // Integrasi dengan Layout Sidebar Kiri
+        $data['title'] = 'Kelola Menu - Ayam Geprek Romeesa';
+        $data['page_title'] = 'Manajemen Menu Restoran';
+        $data['subview'] = 'v_owner_menu';
+
+        $this->load->view('templates/v_sidebar', $data);
     }
 
     // Tambah menu baru dengan upload foto
@@ -163,7 +178,6 @@ class Owner extends CI_Controller {
     // Hapus menu beserta file fotonya
     public function hapus_menu($id)
     {
-        // Ambil data menu untuk hapus file foto dari folder uploads
         $menu = $this->db->get_where('menu', ['id' => $id])->row_array();
         if (!empty($menu['foto']) && file_exists('./uploads/' . $menu['foto'])) {
             unlink('./uploads/' . $menu['foto']);
