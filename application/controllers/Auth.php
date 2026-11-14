@@ -7,7 +7,7 @@ class Auth extends CI_Controller {
     {
         parent::__construct();
         $this->load->database();
-        $this->load->library(['session', 'form_validation']);
+        $this->load->library(['session']);
         $this->load->helper(['url', 'form']);
     }
 
@@ -28,7 +28,7 @@ class Auth extends CI_Controller {
 
     public function loginProcess()
     {
-        $username = $this->input->post('username');
+        $username = $this->input->post('username', true);
         $password = md5($this->input->post('password'));
 
         $user = $this->db->get_where('users', ['username' => $username])->row_array();
@@ -44,6 +44,7 @@ class Auth extends CI_Controller {
                 ];
                 $this->session->set_userdata($sesData);
 
+                // Arahkan berdasarkan role dengan site_url yang bersih
                 if ($user['role'] == 'kasir') {
                     redirect('cashier');
                 } elseif ($user['role'] == 'owner') {
