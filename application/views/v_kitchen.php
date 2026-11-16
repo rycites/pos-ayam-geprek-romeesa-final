@@ -1,10 +1,30 @@
-<div class="container-fluid px-4">
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dapur - Ayam Geprek Romeesa</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Auto-refresh setiap 10 detik agar pesanan baru dari kasir/pelanggan langsung muncul -->
+    <meta http-equiv="refresh" content="10">
+</head>
+<body class="bg-light">
+
+<div class="container-fluid px-4 py-4">
     <div class="card border-0 shadow-sm rounded-4 bg-white mb-4">
-        <div class="card-header bg-white py-3 px-4 border-bottom border-light">
-            <h5 class="fw-bold text-dark mb-1 fs-6">
-                <i class="fa-solid fa-fire-burner text-danger me-2"></i> Pesanan Yang Harus Dimasak
-            </h5>
-            <p class="text-muted small mb-0" style="font-size: 13px;">Daftar pesanan aktif dari kasir dan meja QR yang perlu segera disiapkan.</p>
+        <div class="card-header bg-white py-3 px-4 border-bottom border-light d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="fw-bold text-dark mb-1 fs-5">
+                    <i class="fa-solid fa-fire-burner text-danger me-2"></i> Pesanan Yang Harus Dimasak
+                </h5>
+                <p class="text-muted small mb-0" style="font-size: 13px;">Daftar pesanan aktif dari kasir dan meja QR yang perlu segera disiapkan. (Auto-refresh tiap 10 detik)</p>
+            </div>
+            <div>
+                <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill fw-bold">
+                    <i class="fa-solid fa-rotate me-1"></i> Live KDS
+                </span>
+            </div>
         </div>
 
         <div class="card-body p-4">
@@ -71,3 +91,6 @@
         </div>
     </div>
 </div>
+
+</body>
+</html>
