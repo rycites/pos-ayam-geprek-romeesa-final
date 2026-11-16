@@ -2,9 +2,12 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Antrean Meja QR - Kasir Ayam Geprek Romeesa</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Auto-refresh setiap 10 detik agar antrean pesanan QR otomatis muncul tanpa reload manual -->
+    <meta http-equiv="refresh" content="10">
 </head>
 <body class="bg-light">
     <!-- Navbar -->
@@ -41,7 +44,7 @@
         <?php endif; ?>
 
         <h3 class="mb-1 fw-bold text-dark">Daftar Pelanggan Meja (Menunggu Pembayaran)</h3>
-        <p class="text-muted mb-4">Pelanggan yang memesan mandiri via QR Code di meja akan muncul di sini beserta nama pemesannya. Silakan konfirmasi pembayaran agar pesanan otomatis diteruskan ke dapur.</p>
+        <p class="text-muted mb-4">Pelanggan yang memesan mandiri via QR Code di meja akan muncul di sini beserta nama pemesannya. Silakan konfirmasi pembayaran agar pesanan otomatis diteruskan ke dapur. <span class="badge bg-warning text-dark">Auto-refresh tiap 10 detik</span></p>
 
         <div class="card shadow-sm border-0 p-3 rounded-4 bg-white">
             <div class="table-responsive">
@@ -75,11 +78,11 @@
                                                     <option value="Cash">Cash (Tunai)</option>
                                                     <option value="QRIS">QRIS / Transfer</option>
                                                 </select>
-                                                <input type="number" name="uang_bayar" id="input_uang_<?= $p['id_transaksi']; ?>" class="form-control form-control-sm mt-1" placeholder="Nominal uang bayar...">
+                                                <input type="number" name="uang_bayar" id="input_uang_<?= $p['id_transaksi']; ?>" class="form-control form-control-sm mt-1" placeholder="Nominal uang bayar..." required>
                                             </div>
                                             <div class="col-5">
                                                 <button type="submit" class="btn btn-success btn-sm w-100 h-100 fw-bold shadow-sm">
-                                                    <i class="fa-solid fa-check me-1"></i> Konfirmasi Lunas
+                                                    <i class="fa-solid fa-check me-1"></i> Konfirmasi
                                                 </button>
                                             </div>
                                         </form>
