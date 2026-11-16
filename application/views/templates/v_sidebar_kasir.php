@@ -65,7 +65,6 @@
     </style>
 </head>
 <body>
-
     <div class="d-flex">
         <!-- SIDEBAR KIRI KASIR -->
         <nav id="sidebar" class="min-vh-100 shadow-sm">
@@ -94,6 +93,13 @@
                         <?php if(isset($jml_pending) && $jml_pending > 0): ?>
                             <span class="badge bg-danger rounded-pill px-2 py-1" style="font-size: 0.7rem;"><?= $jml_pending; ?></span>
                         <?php endif; ?>
+                    </a>
+                </li>
+
+                <!-- Menu Laporan Penjualan (Fitur Baru) -->
+                <li>
+                    <a href="<?= site_url('cashier/laporan'); ?>">
+                        <i class="fa-solid fa-chart-line"></i> Laporan Penjualan
                     </a>
                 </li>
 
