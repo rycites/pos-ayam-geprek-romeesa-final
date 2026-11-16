@@ -65,7 +65,6 @@
     </style>
 </head>
 <body>
-
     <div class="d-flex">
         <!-- SIDEBAR KIRI -->
         <nav id="sidebar" class="min-vh-100 shadow-sm">
@@ -88,6 +87,10 @@
                 </li>
                 <li>
                     <a href="<?= site_url('owner/laporan'); ?>"><i class="fa-solid fa-file-lines"></i> Laporan Keuangan</a>
+                </li>
+                <!-- Menu Manajemen User (Fitur Baru) -->
+                <li>
+                    <a href="<?= site_url('owner/users'); ?>"><i class="fa-solid fa-users-gear"></i> Manajemen User</a>
                 </li>
 
                 <hr class="text-secondary mx-3 my-3 opacity-25">
