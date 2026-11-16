@@ -14,6 +14,9 @@ class Pelanggan extends CI_Controller {
     // Halaman Utama Menu Pelanggan berdasarkan Nomor Meja
     public function meja($no_meja)
     {
+        // Simpan nomor meja aktif di session perangkat
+        $this->session->set_userdata('active_table', $no_meja);
+
         $data['no_meja'] = $no_meja;
         // Ambil semua menu yang aktif/tersedia
         $data['menu'] = $this->db->get('menu')->result_array();
@@ -74,7 +77,7 @@ class Pelanggan extends CI_Controller {
 
         $nama_pemesan      = $this->input->post('nama_pemesan', true);
         $metode_pembayaran = $this->input->post('metode_pembayaran', true);
-
+        
         // Hitung grand total
         $grand_total = 0;
         foreach ($cart as $item) {
@@ -87,7 +90,7 @@ class Pelanggan extends CI_Controller {
         // Tentukan status bayar (Jika QRIS langsung lunas, jika Cash status pending bayar ke kasir)
         $status_bayar = ($metode_pembayaran == 'QRIS') ? 'lunas' : 'pending';
 
-        // 1. Simpan ke tabel transaksi (Nomor Meja digabung dengan Nama Pemesan agar jelas di kasir)
+        // 1. Simpan ke tabel transaksi
         $data_transaksi = [
             'no_faktur'         => $no_faktur,
             'tanggal'           => date('Y-m-d H:i:s'),
@@ -104,8 +107,10 @@ class Pelanggan extends CI_Controller {
         $this->db->insert('transaksi', $data_transaksi);
         $id_transaksi = $this->db->insert_id();
 
+        // SIMPAN SESSION AKTIF PERANGKAT (Agar bisa diakses kembali walau tekan back)
+        $this->session->set_userdata('active_order_table_' . $no_meja, $id_transaksi);
+
         // 2. Tentukan status detail pesanan berdasarkan metode pembayaran
-        // QRIS langsung masuk dapur ('pending'), Cash ditahan dulu menunggu kasir ('menunggu_kasir')
         $status_detail = ($metode_pembayaran == 'QRIS') ? 'pending' : 'menunggu_kasir';
 
         foreach ($cart as $item) {
@@ -123,12 +128,75 @@ class Pelanggan extends CI_Controller {
         $this->session->unset_userdata('cart_pelanggan');
 
         // 4. Siapkan data untuk halaman sukses
-        $data['no_meja']           = $no_meja;
-        $data['no_faktur']         = $no_faktur;
-        $data['nama_pemesan']      = $nama_pemesan;
-        $data['grand_total']       = $grand_total;
-        $data['metode_pembayaran'] = $metode_pembayaran;
+        $data['no_meja']            = $no_meja;
+        $data['no_faktur']          = $no_faktur;
+        $data['nama_pemesan']       = $nama_pemesan;
+        $data['grand_total']        = $grand_total;
+        $data['metode_pembayaran']  = $metode_pembayaran;
+        $data['id_transaksi']       = $id_transaksi;
 
         $this->load->view('v_pelanggan_sukses', $data);
+    }
+
+    // Halaman Cek Status Pesanan Berdasarkan ID Transaksi
+    public function status($id_transaksi)
+    {
+        $data['transaksi'] = $this->db->get_where('transaksi', ['id_transaksi' => $id_transaksi])->row_array();
+        
+        if (!$data['transaksi']) {
+            show_404();
+        }
+
+        // Ambil detail pesanan untuk melihat status di dapur
+        $data['detail_transaksi'] = $this->db->select('detail_transaksi.*, menu.nama_menu')
+                                           ->from('detail_transaksi')
+                                           ->join('menu', 'menu.id = detail_transaksi.id_menu')
+                                           ->where('detail_transaksi.id_transaksi', $id_transaksi)
+                                           ->get()
+                                           ->result_array();
+
+        // CEK OTOMATIS: Apakah semua item di dapur sudah berstatus 'selesai'?
+        $semua_selesai = true;
+        if (!empty($data['detail_transaksi'])) {
+            foreach ($data['detail_transaksi'] as $dt) {
+                if ($dt['status'] != 'selesai') {
+                    $semua_selesai = false;
+                    break;
+                }
+            }
+        } else {
+            $semua_selesai = false;
+        }
+
+        // Jika dapur sudah menuntaskan semua menu, bersihkan session perangkat secara otomatis
+        if ($semua_selesai) {
+            preg_match('/\d+/', $data['transaksi']['nomor_meja'], $match);
+            $no_meja = isset($match[0]) ? $match[0] : null;
+            if ($no_meja) {
+                $this->session->unset_userdata('active_order_table_' . $no_meja);
+            }
+        }
+
+        $this->load->view('v_pelanggan_status', $data);
+    }
+
+    // Fungsi Pintasan untuk Cek Status Pesanan Aktif di Perangkat Ini
+    public function cek_status_aktif($no_meja)
+    {
+        $id_transaksi = $this->session->userdata('active_order_table_' . $no_meja);
+
+        if (!$id_transaksi) {
+            $this->session->set_flashdata('error', 'Belum ada riwayat pesanan aktif dari perangkat ini untuk Meja ' . $no_meja);
+            redirect('pelanggan/meja/' . $no_meja);
+        }
+
+        redirect('pelanggan/status/' . $id_transaksi);
+    }
+
+    // Fungsi untuk membersihkan riwayat perangkat secara manual jika diperlukan
+    public function reset_sesi_meja($no_meja)
+    {
+        $this->session->unset_userdata('active_order_table_' . $no_meja);
+        redirect('pelanggan/meja/' . $no_meja);
     }
 }
