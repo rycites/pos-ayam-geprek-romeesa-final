@@ -12,7 +12,7 @@
         body {
             background-color: #f8f9fa;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            padding-bottom: 90px;
+            padding-bottom: 110px; /* Diperbesar sedikit agar tidak tertutup floating bar status */
         }
         .navbar-brand {
             font-weight: 800;
@@ -23,15 +23,25 @@
         }
         .floating-cart {
             position: fixed;
-            bottom: 0;
+            bottom: 65px; /* Dinaikkan sedikit agar berdampingan dengan bar status */
             left: 0;
             right: 0;
             background: #ffffff;
             box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
-            z-index: 1030;
+            z-index: 1029;
             border-top-left-radius: 20px;
             border-top-right-radius: 20px;
-            padding: 15px 20px;
+            padding: 12px 20px;
+        }
+        .floating-status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #212529;
+            z-index: 1030;
+            padding: 10px 20px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.15);
         }
     </style>
 </head>
@@ -76,7 +86,6 @@
                     <div class="row g-3">
                         <?php if(!empty($menu)): ?>
                             <?php foreach($menu as $m): ?>
-                                <!-- Diubah menjadi col-6 agar di HP tampil 2 kolom berdampingan secara rapi -->
                                 <div class="col-6 col-md-4">
                                     <div class="card h-100 shadow-sm border border-light rounded-4 bg-white overflow-hidden">
                                         <?php if(!empty($m['foto'])): ?>
@@ -117,7 +126,7 @@
                         <i class="fa-solid fa-cart-shopping text-danger me-2"></i> Keranjang Meja <?= $no_meja; ?>
                     </h5>
                     <hr class="text-secondary opacity-25">
-
+                    
                     <div style="max-height: 220px; overflow-y: auto;" class="pe-1">
                         <ul class="list-group list-group-flush mb-3">
                             <?php 
@@ -187,6 +196,13 @@
                             Kirim Pesanan Sekarang
                         </button>
                     <?php endif; ?>
+
+                    <!-- Tombol Cek Status Aktif (Desktop Sidebar) -->
+                    <div class="mt-4 pt-3 border-top text-center">
+                        <a href="<?= site_url('pelanggan/cek_status_aktif/' . $no_meja); ?>" class="btn btn-outline-dark btn-sm rounded-pill w-100 py-2 fw-semibold">
+                            <i class="fa-solid fa-clock-rotate-left me-1 text-warning"></i> Cek Status Pesanan Meja Ini
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -278,6 +294,19 @@
             </div>
         </div>
     <?php endif; ?>
+
+    <!-- FLOATING STATUS BAR (KHUSUS MOBILE - AKSES STATUS PESANAN AKTIF) -->
+    <div class="floating-status-bar d-lg-none">
+        <div class="container d-flex align-items-center justify-content-between">
+            <div class="text-white">
+                <small class="d-block text-white-50" style="font-size: 0.65rem;">RIWAYAT MEJA <?= $no_meja; ?></small>
+                <span class="fw-bold small"><i class="fa-solid fa-clock-rotate-left text-warning me-1"></i> Cek Status Pesanan</span>
+            </div>
+            <a href="<?= site_url('pelanggan/cek_status_aktif/' . $no_meja); ?>" class="btn btn-outline-light btn-sm rounded-pill px-3 fw-bold">
+                Buka Status <i class="fa-solid fa-arrow-right ms-1"></i>
+            </a>
+        </div>
+    </div>
 
     <!-- Script Interaktif untuk QRIS -->
     <script>
