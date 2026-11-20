@@ -1,145 +1,128 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+$ci     =& get_instance();
+$segmen = $ci->uri->segment(2);
+$aktif  = ($segmen === 'antrean_meja') ? 'antrean' : (($segmen === 'laporan') ? 'laporan' : 'pos');
+
+$nama     = (string) $ci->session->userdata('nama');
+$username = (string) $ci->session->userdata('username');
+$inisial  = strtoupper(mb_substr($nama !== '' ? $nama : $username, 0, 1));
+
+// Pesanan meja dari QR yang belum diproses kasir
+$jml_pending = $ci->db->where('id_kasir', 0)->where('status_bayar', 'Pending')->count_all_results('transaksi');
+
+$hari_ini = $ci->db
+    ->select('COUNT(*) AS jumlah, COALESCE(SUM(total_bayar), 0) AS total')
+    ->where('status_bayar', 'Lunas')
+    ->where('DATE(tanggal) = CURDATE()', NULL, FALSE)
+    ->get('transaksi')
+    ->row();
+
+$nama_bulan = [1 => 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+$tanggal_ini = date('d') . ' ' . $nama_bulan[(int) date('n')] . ' ' . date('Y');
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= isset($title) ? $title : 'Kasir - Ayam Geprek Romeesa'; ?></title>
-    <!-- Bootstrap 5 CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><?= isset($page_title) ? html_escape($page_title) : 'Panel Kasir'; ?> - Ayam Geprek Romeesa</title>
+    <?php if (!empty($refresh)): ?><meta http-equiv="refresh" content="<?= (int) $refresh; ?>"><?php endif; ?>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body {
-            background-color: #f4f6f9;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        #sidebar {
-            min-width: 250px;
-            max-width: 250px;
-            background: #ffffff;
-            color: #333;
-            border-right: 1px solid #dee2e6;
-        }
-        #sidebar .sidebar-header {
-            padding: 20px;
-            background: #ffffff;
-            border-bottom: 1px solid #f1f3f5;
-            font-size: 1rem;
-            font-weight: 700;
-            color: #212529;
-        }
-        #sidebar ul.components {
-            padding: 15px 0;
-        }
-        #sidebar ul li a {
-            padding: 12px 20px;
-            font-size: 0.9rem;
-            display: block;
-            color: #495057;
-            text-decoration: none;
-            font-weight: 500;
-            transition: 0.2s;
-            border-left: 3px solid transparent;
-        }
-        #sidebar ul li a:hover, #sidebar ul li.active a {
-            color: #dc3545;
-            background: #fff5f5;
-            border-left-color: #dc3545;
-        }
-        #sidebar ul li a i {
-            margin-right: 10px;
-            width: 20px;
-            text-align: center;
-        }
-        #content {
-            width: 100%;
-            padding: 25px;
-            min-height: 100vh;
-        }
-        .top-navbar {
-            background: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            border: 1px solid #eaeaea;
-        }
-    </style>
+    <link rel="stylesheet" href="<?= base_url('assets/css/theme.css'); ?>">
 </head>
 <body>
-    <div class="d-flex">
-        <!-- SIDEBAR KIRI KASIR -->
-        <nav id="sidebar" class="min-vh-100 shadow-sm">
-            <div class="sidebar-header d-flex align-items-center">
-                <span class="badge bg-danger p-2 rounded-circle me-2"><i class="fa-solid fa-cash-register text-white"></i></span>
-                <div>
-                    <div class="fw-bold" style="font-size: 0.95rem;">Geprek Romeesa</div>
-                    <small class="text-muted" style="font-size: 0.75rem;">Panel Kasir</small>
-                </div>
-            </div>
+<div class="app">
+    <aside class="app-sidebar" id="appSidebar" aria-label="Navigasi utama">
+        <div class="brand">
+            <span class="brand-mark"><i class="fa-solid fa-cash-register" aria-hidden="true"></i></span>
+            <span class="brand-text">
+                <strong>Geprek Romeesa</strong>
+                <small>Panel Kasir</small>
+            </span>
+            <button type="button" class="sidebar-close" data-sidebar-toggle aria-label="Tutup navigasi">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+            </button>
+        </div>
 
-            <ul class="list-unstyled components">
-                <li class="text-muted px-3 small fw-bold mb-2 text-uppercase" style="font-size: 0.7rem;">Menu Kasir</li>
-                
-                <li>
-                    <a href="<?= site_url('cashier'); ?>"><i class="fa-solid fa-cash-register"></i> Kasir POS Utama</a>
-                </li>
-                <li>
-                    <a href="<?= site_url('cashier/antrean_meja'); ?>" class="d-flex justify-content-between align-items-center">
-                        <span><i class="fa-solid fa-bell-concierge"></i> Antrean Meja QR</span>
-                        <?php 
-                            // Menghitung jumlah antrean pending secara otomatis di sidebar
-                            $ci =& get_instance();
-                            $jml_pending = $ci->db->where('id_kasir', 0)->where('status_bayar', 'Pending')->count_all_results('transaksi');
-                        ?>
-                        <?php if(isset($jml_pending) && $jml_pending > 0): ?>
-                            <span class="badge bg-danger rounded-pill px-2 py-1" style="font-size: 0.7rem;"><?= $jml_pending; ?></span>
-                        <?php endif; ?>
-                    </a>
-                </li>
+        <nav class="nav-group">
+            <p class="nav-group-title">Menu Kasir</p>
 
-                <!-- Menu Laporan Penjualan (Fitur Baru) -->
-                <li>
-                    <a href="<?= site_url('cashier/laporan'); ?>">
-                        <i class="fa-solid fa-chart-line"></i> Laporan Penjualan
-                    </a>
-                </li>
+            <a class="nav-item<?= $aktif === 'pos' ? ' is-active' : '' ?>" href="<?= site_url('cashier'); ?>"<?= $aktif === 'pos' ? ' aria-current="page"' : '' ?>>
+                <i class="fa-solid fa-cash-register" aria-hidden="true"></i> <span>Kasir POS</span>
+            </a>
 
-                <hr class="text-secondary mx-3 my-3 opacity-25">
-                
-                <li>
-                    <a href="<?= site_url('auth/logout'); ?>" class="text-danger"><i class="fa-solid fa-right-from-bracket"></i> Keluar Sistem</a>
-                </li>
-            </ul>
+            <a class="nav-item<?= $aktif === 'antrean' ? ' is-active' : '' ?>" href="<?= site_url('cashier/antrean_meja'); ?>"<?= $aktif === 'antrean' ? ' aria-current="page"' : '' ?>>
+                <i class="fa-solid fa-bell-concierge" aria-hidden="true"></i> <span>Antrean Meja QR</span>
+                <?php if ($jml_pending > 0): ?><span class="nav-count"><?= $jml_pending; ?></span><?php endif; ?>
+            </a>
+
+            <a class="nav-item<?= $aktif === 'laporan' ? ' is-active' : '' ?>" href="<?= site_url('cashier/laporan'); ?>"<?= $aktif === 'laporan' ? ' aria-current="page"' : '' ?>>
+                <i class="fa-solid fa-chart-line" aria-hidden="true"></i> <span>Laporan Penjualan</span>
+            </a>
         </nav>
 
-        <!-- KONTEN UTAMA DI KANAN -->
-        <div id="content">
-            <!-- Topbar Kasir -->
-            <nav class="navbar navbar-expand-lg top-navbar px-4 mb-4 py-3">
-                <div class="container-fluid px-0">
-                    <span class="fw-bold text-dark fs-6"><i class="fa-solid fa-desktop me-2 text-muted"></i> <?= isset($page_title) ? $page_title : 'Dashboard Kasir'; ?></span>
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-3 py-2 rounded-pill fw-medium">
-                            <i class="fa-solid fa-user-shield me-1"></i> Role: Kasir
-                        </span>
-                        <span class="badge bg-light text-dark border px-3 py-2 rounded-pill fw-medium">
-                            <i class="fa-solid fa-user text-secondary me-1"></i> <?= $this->session->userdata('nama'); ?>
-                        </span>
-                    </div>
-                </div>
-            </nav>
-
-            <!-- KONTEN DINAMIS -->
-            <div class="container-fluid px-0">
-                <?php 
-                    if(isset($subview)) {
-                        $this->load->view($subview);
-                    }
-                ?>
+        <div class="sidebar-foot">
+            <div class="sidebar-note">
+                <span class="note-label">Penjualan hari ini</span>
+                <div class="note-value">Rp <?= number_format($hari_ini->total, 0, ',', '.'); ?></div>
+                <div class="note-sub"><?= $hari_ini->jumlah; ?> transaksi lunas</div>
             </div>
         </div>
-    </div>
+    </aside>
 
-    <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <div class="app-main">
+        <header class="app-topbar">
+            <button type="button" class="icon-btn sidebar-toggle" data-sidebar-toggle aria-controls="appSidebar" aria-expanded="false" aria-label="Buka navigasi">
+                <i class="fa-solid fa-bars" aria-hidden="true"></i>
+            </button>
+
+            <div class="topbar-title">
+                <h1><?= isset($page_title) ? html_escape($page_title) : 'Panel Kasir'; ?></h1>
+                <p>Transaksi dan pesanan meja</p>
+            </div>
+
+            <div class="topbar-actions">
+                <span class="badge-soft is-neutral d-none d-lg-inline-flex">
+                    <i class="fa-regular fa-calendar" aria-hidden="true"></i> <?= $tanggal_ini; ?>
+                </span>
+
+                <div class="dropdown">
+                    <button class="user-chip" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <span class="avatar"><?= html_escape($inisial); ?></span>
+                        <span class="user-text">
+                            <span class="user-name"><?= html_escape($nama); ?></span>
+                            <span class="user-role">Kasir</span>
+                        </span>
+                        <i class="fa-solid fa-chevron-down" style="font-size:.68rem" aria-hidden="true"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><span class="dropdown-item-text small text-muted">Masuk sebagai <strong><?= html_escape($username); ?></strong></span></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item text-danger" href="<?= site_url('auth/logout'); ?>">
+                                <i class="fa-solid fa-right-from-bracket me-2" aria-hidden="true"></i> Keluar
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <main class="app-content">
+            <?php if (isset($subview)) { $this->load->view($subview); } ?>
+        </main>
+    </div>
+</div>
+
+<div class="app-backdrop" data-sidebar-backdrop hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="<?= base_url('assets/js/theme.js'); ?>"></script>
 </body>
 </html>
