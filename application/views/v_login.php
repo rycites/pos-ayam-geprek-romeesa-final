@@ -1,114 +1,97 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Ayam Geprek Romeesa</title>
-    <!-- Bootstrap 5 CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Masuk - Ayam Geprek Romeesa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body, html {
-            height: 100%;
-            margin: 0;
-            background-color: #f4f6f9;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .login-card {
-            width: 100%;
-            max-width: 380px;
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-            background: #ffffff;
-            overflow: hidden;
-            border-top: 5px solid #dc3545;
-        }
-        .login-body {
-            padding: 30px;
-        }
-        .brand-title {
-            font-weight: 700;
-            color: #212529;
-            font-size: 1.25rem;
-            letter-spacing: -0.5px;
-        }
-        .form-label {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: #495057;
-        }
-        .form-control {
-            padding: 10px 14px;
-            font-size: 0.9rem;
-            border-radius: 8px;
-            border: 1px solid #ced4da;
-        }
-        .form-control:focus {
-            border-color: #dc3545;
-            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.15);
-        }
-        .btn-danger {
-            background-color: #dc3545;
-            border-color: #dc3545;
-            padding: 10px;
-            font-weight: 600;
-            border-radius: 8px;
-        }
-        .btn-danger:hover {
-            background-color: #bb2d3b;
-            border-color: #b02a37;
-        }
-    </style>
+    <link rel="stylesheet" href="<?= base_url('assets/css/theme.css'); ?>">
 </head>
 <body>
+<div class="login-page">
 
-    <div class="login-card">
-        <div class="login-body">
-            
-            <!-- Judul & Identitas Warung -->
-            <div class="text-center mb-4">
-                <div class="mb-2">
-                    <span class="badge bg-danger p-2 rounded-circle"><i class="fa-solid fa-utensils text-white"></i></span>
-                </div>
-                <h4 class="brand-title mb-1">Ayam Geprek Romeesa</h4>
-                <p class="text-muted small mb-0">Silakan login untuk masuk ke sistem</p>
+    <section class="login-brand">
+        <div class="brand">
+            <span class="brand-mark"><i class="fa-solid fa-utensils" aria-hidden="true"></i></span>
+            <span class="brand-text">
+                <strong>Geprek Romeesa</strong>
+                <small>Sistem Kasir &amp; Pesanan</small>
+            </span>
+        </div>
+
+        <div>
+            <h1>Satu sistem untuk kasir, dapur, dan pemilik.</h1>
+            <p>Setiap peran masuk dengan halaman kerjanya sendiri, jadi tidak ada data yang tercampur.</p>
+
+            <div class="login-points">
+                <div><i class="fa-solid fa-chart-pie" aria-hidden="true"></i> <span>Owner memantau penjualan, menu, dan akun staf</span></div>
+                <div><i class="fa-solid fa-cash-register" aria-hidden="true"></i> <span>Kasir memproses pesanan meja dan pesanan QR</span></div>
+                <div><i class="fa-solid fa-fire-burner" aria-hidden="true"></i> <span>Dapur melihat antrean yang harus dimasak</span></div>
             </div>
+        </div>
+    </section>
 
-            <!-- Alert Gagal Login -->
-            <?php if($this->session->flashdata('msg')): ?>
-                <div class="alert alert-danger alert-dismissible fade show py-2 small mb-3" role="alert">
-                    <?= $this->session->flashdata('msg'); ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    <section class="login-panel">
+        <div class="login-card">
+            <h2>Masuk ke sistem</h2>
+            <p class="lead">Gunakan username dan password yang diberikan pemilik restoran.</p>
+
+            <?php if ($this->session->flashdata('msg')): ?>
+                <div class="alert alert-danger mb-3" role="alert">
+                    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                    <span><?= html_escape($this->session->flashdata('msg')); ?></span>
                 </div>
             <?php endif; ?>
 
-            <!-- Form Login -->
             <form action="<?= site_url('auth/loginProcess'); ?>" method="POST">
-                
                 <div class="mb-3">
-                    <label class="form-label">Username</label>
-                    <input type="text" name="username" class="form-control" required autocomplete="off" placeholder="Masukkan username">
+                    <label class="form-label" for="username">Username</label>
+                    <input type="text" id="username" name="username" class="form-control" required autofocus
+                           autocomplete="username" placeholder="Masukkan username">
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label">Password</label>
-                    <input type="password" name="password" class="form-control" required placeholder="Masukkan password">
+                    <label class="form-label" for="password">Password</label>
+                    <div class="input-group">
+                        <input type="password" id="password" name="password" class="form-control" required
+                               autocomplete="current-password" placeholder="Masukkan password">
+                        <button class="btn btn-light" type="button" id="togglePassword" aria-label="Tampilkan password" aria-pressed="false">
+                            <i class="fa-regular fa-eye" aria-hidden="true"></i>
+                        </button>
+                    </div>
                 </div>
 
-                <button type="submit" class="btn btn-danger w-100 shadow-sm">
-                    Masuk ke Sistem
-                </button>
+                <button type="submit" class="btn btn-primary btn-lg w-100">Masuk ke sistem</button>
             </form>
 
+            <div class="role-hint mt-4">
+                Bagian yang bisa diakses ditentukan oleh peran akun: <code>owner</code>, <code>kasir</code>, atau <code>dapur</code>.
+            </div>
         </div>
-    </div>
+    </section>
+</div>
 
-    <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    (function () {
+        var input = document.getElementById('password');
+        var tombol = document.getElementById('togglePassword');
+        if (!input || !tombol) return;
+        tombol.addEventListener('click', function () {
+            var tampil = input.type === 'password';
+            input.type = tampil ? 'text' : 'password';
+            tombol.setAttribute('aria-pressed', tampil ? 'true' : 'false');
+            tombol.setAttribute('aria-label', tampil ? 'Sembunyikan password' : 'Tampilkan password');
+            tombol.querySelector('i').className = tampil ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+        });
+    })();
+</script>
 </body>
 </html>

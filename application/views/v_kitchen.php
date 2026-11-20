@@ -1,96 +1,61 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dapur - Ayam Geprek Romeesa</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Auto-refresh setiap 10 detik agar pesanan baru dari kasir/pelanggan langsung muncul -->
-    <meta http-equiv="refresh" content="10">
-</head>
-<body class="bg-light">
+<?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
 
-<div class="container-fluid px-4 py-4">
-    <div class="card border-0 shadow-sm rounded-4 bg-white mb-4">
-        <div class="card-header bg-white py-3 px-4 border-bottom border-light d-flex justify-content-between align-items-center">
-            <div>
-                <h5 class="fw-bold text-dark mb-1 fs-5">
-                    <i class="fa-solid fa-fire-burner text-danger me-2"></i> Pesanan Yang Harus Dimasak
-                </h5>
-                <p class="text-muted small mb-0" style="font-size: 13px;">Daftar pesanan aktif dari kasir dan meja QR yang perlu segera disiapkan. (Auto-refresh tiap 10 detik)</p>
-            </div>
-            <div>
-                <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill fw-bold">
-                    <i class="fa-solid fa-rotate me-1"></i> Live KDS
-                </span>
-            </div>
-        </div>
-
-        <div class="card-body p-4">
-            <div class="row g-3">
-                <?php if (!empty($pesanan)): ?>
-                    <?php foreach ($pesanan as $p): ?>
-                        <div class="col-xl-4 col-md-6 col-12">
-                            <div class="card border border-light shadow-sm rounded-4 h-100 overflow-hidden bg-white">
-                                <div class="card-body p-3 d-flex flex-column justify-content-between">
-                                    <div>
-                                        <!-- Header Kartu: No Faktur & Meja -->
-                                        <div class="d-flex justify-content-between align-items-center mb-3">
-                                            <span class="badge bg-danger bg-opacity-10 text-danger px-2.5 py-1.5 rounded-pill fw-bold" style="font-size: 12px;">
-                                                #<?= isset($p['no_faktur']) ? $p['no_faktur'] : '-'; ?>
-                                            </span>
-                                            <span class="badge bg-warning bg-opacity-10 text-dark px-2.5 py-1.5 rounded-pill fw-semibold border border-warning border-opacity-25 text-truncate" style="max-width: 55%; font-size: 12px;">
-                                                <i class="fa-solid fa-chair me-1 text-danger"></i> <?= isset($p['nomor_meja']) ? $p['nomor_meja'] : '-'; ?>
-                                            </span>
-                                        </div>
-
-                                        <!-- Detail Menu & Foto -->
-                                        <div class="d-flex align-items-center mb-3">
-                                            <?php if (!empty($p['foto'])): ?>
-                                                <img src="<?= base_url('uploads/' . $p['foto']); ?>" alt="Menu" class="rounded-3 me-3 shadow-sm" style="width: 55px; height: 55px; object-fit: cover; flex-shrink: 0;">
-                                            <?php else: ?>
-                                                <div class="bg-light rounded-3 me-3 d-flex align-items-center justify-content-center text-secondary" style="width: 55px; height: 55px; flex-shrink: 0;">
-                                                    <i class="fa-solid fa-utensils"></i>
-                                                </div>
-                                            <?php endif; ?>
-                                            
-                                            <div class="flex-grow-1 overflow-hidden">
-                                                <h6 class="fw-bold text-dark mb-1 text-truncate" style="font-size: 14px;" title="<?= isset($p['nama_menu']) ? $p['nama_menu'] : ''; ?>">
-                                                    <?= isset($p['nama_menu']) ? $p['nama_menu'] : 'Menu Tidak Ditemukan'; ?>
-                                                </h6>
-                                                <span class="text-muted" style="font-size: 13px;">
-                                                    Jumlah: <strong class="text-danger"><?= isset($p['qty']) ? $p['qty'] : (isset($p['jumlah']) ? $p['jumlah'] : '1'); ?> Porsi</strong>
-                                                </span>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Waktu Pesan -->
-                                        <p class="text-muted mb-3" style="font-size: 12px;">
-                                            <i class="fa-regular fa-clock me-1 text-secondary"></i> Waktu: <?= isset($p['tanggal']) ? date('H:i', strtotime($p['tanggal'])) : '-'; ?> WIB
-                                        </p>
-                                    </div>
-
-                                    <!-- Tombol Selesai -->
-                                    <a href="<?= site_url('kitchen/selesai/' . (isset($p['id_detail']) ? $p['id_detail'] : '')); ?>" class="btn btn-dark w-100 rounded-pill py-2 fw-semibold shadow-sm d-flex align-items-center justify-content-center" style="font-size: 13px;">
-                                        <i class="fa-solid fa-circle-check me-2 text-success"></i> Tandai Selesai / Siap Saji
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <div class="col-12 text-center py-5 text-muted">
-                        <div class="py-5">
-                            <i class="fa-solid fa-mug-hot fa-3x text-secondary opacity-25 mb-3"></i>
-                            <p class="mb-0 fw-medium text-secondary" style="font-size: 14px;">Belum ada pesanan aktif di dapur saat ini. Semua pesanan sudah selesai!</p>
-                        </div>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
+<div class="page-head">
+    <div>
+        <h2><?= count($pesanan); ?> item pesanan menunggu</h2>
     </div>
+    <span class="badge-soft is-ok">
+        <span class="dot" aria-hidden="true"></span> Dapur aktif, diperbarui tiap 10 detik
+    </span>
 </div>
 
-</body>
-</html>
+<?php if (!empty($pesanan)): ?>
+    <div class="ticket-grid">
+        <?php foreach ($pesanan as $p): ?>
+            <?php $jumlah = isset($p['jumlah']) ? $p['jumlah'] : (isset($p['qty']) ? $p['qty'] : 1); ?>
+            <article class="ticket">
+                <div class="ticket-head">
+                    <span class="ticket-num">#<?= isset($p['no_faktur']) ? html_escape($p['no_faktur']) : '-'; ?></span>
+                    <span class="badge-soft is-warn">
+                        <i class="fa-solid fa-chair" aria-hidden="true"></i>
+                        <?= isset($p['nomor_meja']) ? html_escape($p['nomor_meja']) : '-'; ?>
+                    </span>
+                </div>
+
+                <div class="ticket-body">
+                    <div class="ticket-item">
+                        <?php if (!empty($p['foto'])): ?>
+                            <img class="ticket-thumb" src="<?= base_url('uploads/' . $p['foto']); ?>" alt="<?= html_escape($p['nama_menu']); ?>">
+                        <?php else: ?>
+                            <span class="ticket-thumb is-empty"><i class="fa-solid fa-utensils" aria-hidden="true"></i></span>
+                        <?php endif; ?>
+
+                        <div class="me-auto">
+                            <div class="fw-bold"><?= isset($p['nama_menu']) ? html_escape($p['nama_menu']) : 'Menu tidak ditemukan'; ?></div>
+                            <div class="text-muted small">
+                                <i class="fa-regular fa-clock me-1" aria-hidden="true"></i>
+                                <?= isset($p['tanggal']) ? date('H:i', strtotime($p['tanggal'])) : '-'; ?> WIB
+                            </div>
+                        </div>
+
+                        <span class="qty-badge">x<?= $jumlah; ?></span>
+                    </div>
+                </div>
+
+                <div class="ticket-foot">
+                    <a href="<?= site_url('kitchen/selesai/' . (isset($p['id_detail']) ? $p['id_detail'] : '')); ?>" class="btn btn-primary w-100">
+                        <i class="fa-solid fa-circle-check me-2" aria-hidden="true"></i> Tandai selesai
+                    </a>
+                </div>
+            </article>
+        <?php endforeach; ?>
+    </div>
+<?php else: ?>
+    <div class="card">
+        <div class="empty-state">
+            <i class="fa-solid fa-mug-hot" aria-hidden="true"></i>
+            <h4>Dapur sedang kosong</h4>
+            <p>Semua pesanan sudah selesai. Pesanan baru akan muncul di sini tanpa perlu menyegar manual.</p>
+        </div>
+    </div>
+<?php endif; ?>
