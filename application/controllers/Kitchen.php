@@ -31,6 +31,7 @@ class Kitchen extends CI_Controller {
         $data['title'] = 'Dapur - Ayam Geprek Romeesa';
         $data['page_title'] = 'Daftar Antrean Pesanan Masuk';
         $data['subview'] = 'v_kitchen';
+        $data['refresh'] = 10;
 
         $this->load->view('templates/v_sidebar_kitchen', $data);
     }

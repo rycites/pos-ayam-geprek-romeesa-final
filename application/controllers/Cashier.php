@@ -151,6 +151,7 @@ class Cashier extends CI_Controller {
         $data['title']      = 'Antrean Meja QR - Ayam Geprek Romeesa';
         $data['page_title'] = 'Konfirmasi Antrean Pesanan Meja';
         $data['subview']    = 'v_cashier_antrean';
+        $data['refresh']    = 10;
 
         $this->load->view('templates/v_sidebar_kasir', $data);
     }
