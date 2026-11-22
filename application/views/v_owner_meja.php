@@ -1,76 +1,312 @@
-<div class="container-fluid px-4 py-3">
-    <!-- Header Bagian Atas & Tombol Cetak yang Diselaraskan dengan Warna Sidebar -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+
+<div class="container-fluid px-4 py-3 owner-meja-page">
+
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4 owner-meja-header">
         <div>
             <h2 class="fw-bold mb-1">Manajemen QR Code Meja</h2>
-            <p class="text-muted mb-0">Kelola dan cetak QR Code untuk setiap meja restoran.</p>
+            <p class="text-muted mb-0">
+                Kelola dan cetak QR Code untuk setiap meja restoran.
+            </p>
         </div>
-        
-        <!-- Tombol dicocokkan dengan warna latar sidebar -->
-        <button onclick="window.print()" class="btn text-white px-4 shadow-sm no-print" style="background-color: #1a1638; border-color: #1a1638;">
-            <i class="fa-solid fa-print me-2"></i> Cetak Semua QR Code
+
+        <button onclick="window.print()"
+            class="btn text-white px-4 shadow-sm no-print owner-meja-print"
+            style="background-color: #1a1638; border-color: #1a1638;">
+            <i class="fa-solid fa-print me-2"></i>
+            Cetak Semua QR Code
         </button>
     </div>
 
-    <!-- Flash Message (jika ada) -->
+    <!-- FLASH MESSAGE -->
     <?php if ($this->session->flashdata('success')): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <div class="alert alert-success alert-dismissible fade show no-print" role="alert">
             <?= $this->session->flashdata('success'); ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <button type="button" class="btn-close"
+                data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>
 
-    <!-- Grid Kartu Meja & QR Code -->
-    <div class="row">
+    <!-- GRID QR MEJA -->
+    <div class="row g-3 g-xl-4 owner-meja-grid">
+
         <?php foreach ($meja as $m) : ?>
-            <?php 
-                // URL tujuan disesuaikan dengan fungsi 'meja' di controller Pelanggan
+
+            <?php
                 $url_tujuan = base_url('pelanggan/meja/' . $m->id_meja);
-                // Menggunakan API QR Code publik yang praktis
-                $qr_api = "https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=" . urlencode($url_tujuan);
+
+                $qr_api = "https://api.qrserver.com/v1/create-qr-code/?size=180x180&data="
+                    . urlencode($url_tujuan);
             ?>
-            <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
-                <div class="card card-meja border-0 shadow-sm h-100 text-center p-3">
-                    <div class="card-body d-flex flex-column align-items-center">
-                        <h4 class="fw-bold text-dark mb-2"><?= html_escape($m->nomor_meja); ?></h4>
-                        <p class="small text-muted mb-3">Kapasitas: <?= html_escape($m->kapasitas); ?> Orang</p>
-                        
-                        <div class="bg-light p-3 rounded mb-3 border">
-                            <img src="<?= $qr_api; ?>" alt="QR Code <?= html_escape($m->nomor_meja); ?>" class="img-fluid" style="width: 150px; height: 150px;">
+
+            <div class="col-xl-3 col-lg-4 col-md-6 mb-2 owner-meja-col">
+
+                <div class="card card-meja border-0 shadow-sm h-100">
+
+                    <div class="card-body d-flex flex-column align-items-center owner-meja-card-body">
+
+                        <!-- INFORMASI MEJA -->
+                        <div class="owner-meja-heading w-100 text-center">
+                            <h4 class="fw-bold text-dark mb-1">
+                                <?= html_escape($m->nomor_meja); ?>
+                            </h4>
+
+                            <p class="small text-muted mb-0">
+                                Kapasitas <?= html_escape($m->kapasitas); ?> orang
+                            </p>
                         </div>
 
-                        <span class="badge bg-success mb-3 px-3 py-2"><?= html_escape($m->status_meja); ?></span>
-                        <small class="text-muted text-break" style="font-size: 0.75rem;"><?= $url_tujuan; ?></small>
+                        <!-- QR CODE -->
+                        <div class="owner-meja-qr-frame bg-light rounded-3 border">
+                            <img
+                                src="<?= $qr_api; ?>"
+                                alt="QR Code <?= html_escape($m->nomor_meja); ?>"
+                                class="img-fluid owner-meja-qr">
+                        </div>
+
+                        <!-- LINK MEJA -->
+                        <div class="owner-meja-url"
+                            title="<?= html_escape($url_tujuan); ?>">
+
+                            <small class="text-muted">
+                                <?= html_escape($url_tujuan); ?>
+                            </small>
+                        </div>
+
                     </div>
                 </div>
             </div>
+
         <?php endforeach; ?>
+
     </div>
 </div>
 
-<!-- Styling Khusus untuk Cetak (Print) -->
+
 <style>
+
+/* =========================================
+   QR MEJA OWNER - TAMPILAN WEBSITE
+   ========================================= */
+
+.owner-meja-page .owner-meja-grid {
+    align-items: stretch;
+}
+
+.owner-meja-page .card-meja {
+    border-radius: 18px;
+    overflow: hidden;
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.owner-meja-page .card-meja:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 22px rgba(26, 22, 56, .10) !important;
+}
+
+.owner-meja-page .owner-meja-card-body {
+    padding: 1.15rem 1rem 1rem;
+}
+
+.owner-meja-page .owner-meja-heading {
+    min-height: 62px;
+}
+
+.owner-meja-page .owner-meja-heading h4 {
+    font-size: 1.35rem;
+}
+
+.owner-meja-page .owner-meja-qr-frame {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    width: 170px;
+    height: 170px;
+    margin: .35rem 0 .9rem;
+}
+
+.owner-meja-page .owner-meja-qr {
+    width: 150px;
+    height: 150px;
+    object-fit: contain;
+}
+
+.owner-meja-page .owner-meja-url {
+    width: 100%;
+    max-width: 245px;
+    text-align: center;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.owner-meja-page .owner-meja-url small {
+    font-size: .72rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+
+/* =========================================
+   RESPONSIVE WEBSITE
+   ========================================= */
+
+@media (max-width: 575.98px) {
+
+    .owner-meja-page .owner-meja-card-body {
+        padding: 1rem .75rem;
+    }
+
+    .owner-meja-page .owner-meja-qr-frame {
+        width: 158px;
+        height: 158px;
+    }
+
+    .owner-meja-page .owner-meja-qr {
+        width: 138px;
+        height: 138px;
+    }
+
+}
+
+
+/* =========================================
+   PENGATURAN KERTAS CETAK
+   ========================================= */
+
+@page {
+    size: A4 portrait;
+    margin: 10mm;
+}
+
+
+/* =========================================
+   KHUSUS PRINT QR MEJA
+   ========================================= */
+
 @media print {
-    /* Sembunyikan sidebar, topbar, dan tombol cetak saat diprint */
-    .app-sidebar, .app-topbar, .no-print, header, footer {
+
+    /* Hilangkan elemen navigasi */
+    .app-sidebar,
+    .app-topbar,
+    .no-print,
+    header,
+    footer {
         display: none !important;
     }
-    
-    /* Atur agar layout memenuhi halaman kertas cetak */
-    .app-main {
+
+    /* Hilangkan margin layout website */
+    html,
+    body {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+
+    .app-main,
+    .owner-meja-page,
+    .owner-meja-grid {
+        width: 100% !important;
+        max-width: none !important;
         margin: 0 !important;
         padding: 0 !important;
     }
-    
-    body {
-        background-color: white !important;
-        color: black !important;
+
+    /* GRID PRINT: 3 CARD PER BARIS */
+    .owner-meja-page .owner-meja-grid {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 7mm !important;
     }
 
-    .card-meja {
-        border: 1px solid #ddd !important;
-        page-break-inside: avoid;
+    .owner-meja-page .owner-meja-col {
+        width: auto !important;
+        max-width: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    /* CARD QR */
+    .owner-meja-page .card-meja {
+        width: 100% !important;
+        height: auto !important;
+        min-height: 68mm !important;
+        border: 1px solid #cccccc !important;
+        border-radius: 4mm !important;
+        box-shadow: none !important;
+        transform: none !important;
+        overflow: hidden !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    /* JARAK CARD */
+    .owner-meja-page .owner-meja-card-body {
+        padding: 4mm 2.5mm !important;
+    }
+
+    /* NAMA MEJA */
+    .owner-meja-page .owner-meja-heading {
+        min-height: auto !important;
+        margin-bottom: 1mm !important;
+    }
+
+    .owner-meja-page .owner-meja-heading h4 {
+        font-size: 15pt !important;
+        margin-bottom: 1mm !important;
+    }
+
+    .owner-meja-page .owner-meja-heading p {
+        font-size: 9pt !important;
+    }
+
+    /* UKURAN QR SAAT CETAK */
+    .owner-meja-page .owner-meja-qr-frame {
+        width: 42mm !important;
+        height: 42mm !important;
+        padding: 0 !important;
+        margin: 2mm auto !important;
+        border: none !important;
+        border-radius: 0 !important;
+        background: #ffffff !important;
+    }
+
+    .owner-meja-page .owner-meja-qr {
+        display: block !important;
+        width: 40mm !important;
+        height: 40mm !important;
+        max-width: none !important;
+        object-fit: contain !important;
+    }
+
+    /* URL */
+    .owner-meja-page .owner-meja-url {
+        width: 100% !important;
+        max-width: 100% !important;
+        line-height: 1.3 !important;
+        text-align: center !important;
+        overflow-wrap: anywhere !important;
+    }
+
+    .owner-meja-page .owner-meja-url small {
+        font-size: 7pt !important;
+        display: block !important;
+        overflow: visible !important;
+        -webkit-line-clamp: unset !important;
+    }
+
+    /* MATIKAN EFEK HOVER */
+    .owner-meja-page .card-meja:hover {
+        transform: none !important;
         box-shadow: none !important;
     }
+
 }
+
 </style>
