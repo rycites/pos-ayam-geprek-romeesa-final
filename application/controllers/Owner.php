@@ -115,6 +115,22 @@ class Owner extends CI_Controller {
         $this->load->view('v_owner_laporan_print', $data);
     }
 
+    // ================= MANAJEMEN QR CODE MEJA =================
+
+    public function meja()
+    {
+        // Memuat model meja
+        $this->load->model('M_meja');
+        
+        $data['title']      = 'Manajemen QR Code Meja - Ayam Geprek Romeesa';
+        $data['page_title'] = 'Manajemen QR Code Meja Pelanggan';
+        $data['meja']       = $this->M_meja->get_data_meja();
+        $data['subview']    = 'v_owner_meja'; // Pastikan file view v_owner_meja.php sudah dibuat
+
+        // Jika Anda menggunakan struktur sidebar utama (template layout)
+        $this->load->view('templates/v_sidebar', $data);
+    }
+
     // ================= CRUD MENU & FOTO =================
 
     public function menu()
@@ -198,7 +214,7 @@ class Owner extends CI_Controller {
                 $data['foto'] = $uploadData['file_name'];
             }
         }
-
+        
         $this->db->where('id', $id);
         $this->db->update('menu', $data);
         $this->session->set_flashdata('success', 'Menu berhasil diubah!');

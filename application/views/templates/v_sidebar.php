@@ -3,7 +3,17 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 $ci      =& get_instance();
 $segmen  = $ci->uri->segment(2);
-$aktif   = ($segmen === 'menu') ? 'menu' : (($segmen === 'users') ? 'users' : 'laporan');
+
+// Menentukan menu yang sedang aktif berdasarkan segment URL ke-2
+if ($segmen === 'menu') {
+    $aktif = 'menu';
+} elseif ($segmen === 'users') {
+    $aktif = 'users';
+} elseif ($segmen === 'meja') {
+    $aktif = 'meja';
+} else {
+    $aktif = 'laporan';
+}
 
 $nama     = (string) $ci->session->userdata('nama');
 $username = (string) $ci->session->userdata('username');
@@ -55,6 +65,11 @@ $tanggal_ini = date('d') . ' ' . $nama_bulan[(int) date('n')] . ' ' . date('Y');
 
             <a class="nav-item<?= $aktif === 'menu' ? ' is-active' : '' ?>" href="<?= site_url('owner/menu'); ?>"<?= $aktif === 'menu' ? ' aria-current="page"' : '' ?>>
                 <i class="fa-solid fa-burger" aria-hidden="true"></i> <span>Kelola Menu</span>
+            </a>
+
+            <!-- Menu QR Code Meja yang baru ditambahkan -->
+            <a class="nav-item<?= $aktif === 'meja' ? ' is-active' : '' ?>" href="<?= site_url('owner/meja'); ?>"<?= $aktif === 'meja' ? ' aria-current="page"' : '' ?>>
+                <i class="fa-solid fa-qrcode" aria-hidden="true"></i> <span>QR Code Meja</span>
             </a>
 
             <a class="nav-item<?= $aktif === 'users' ? ' is-active' : '' ?>" href="<?= site_url('owner/users'); ?>"<?= $aktif === 'users' ? ' aria-current="page"' : '' ?>>
