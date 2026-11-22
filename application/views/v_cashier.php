@@ -1,14 +1,29 @@
+
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 $cart = $this->session->userdata('cart');
 $grand_total = 0;
+
 if (!empty($cart)) {
     foreach ($cart as $item) {
         $grand_total += $item['subtotal'];
     }
 }
-$kategori = ['makanan' => 'Makanan', 'minuman' => 'Minuman', 'topping' => 'Topping'];
+
+$kategori = [
+    'makanan' => 'Makanan',
+    'minuman' => 'Minuman',
+    'topping' => 'Topping'
+];
+
+// URL foto dinamis mengikuti host yang sedang digunakan
+$host_aktif = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$protokol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+    ? 'https://'
+    : 'http://';
+
+$url_foto_kasir = $protokol . $host_aktif . '/ayam-geprek-romeesa-final/uploads/foto_menu/';
 ?>
 
 <?php if ($this->session->flashdata('success')): ?>
@@ -55,23 +70,40 @@ $kategori = ['makanan' => 'Makanan', 'minuman' => 'Minuman', 'topping' => 'Toppi
         <?php if (!empty($menu)): ?>
             <div class="dish-grid">
                 <?php foreach ($menu as $m): ?>
+                    <?php
+                    $nama_foto = !empty($m['foto'])
+                        ? basename($m['foto'])
+                        : '';
+                    ?>
+
                     <article class="dish"
                              data-filter-item
                              data-category="<?= html_escape($m['kategori']); ?>"
                              data-name="<?= html_escape(strtolower($m['nama_menu'])); ?>">
 
                         <div class="dish-media">
-                            <?php if (!empty($m['foto'])): ?>
-                                <img src="<?= base_url('uploads/' . $m['foto']); ?>" alt="<?= html_escape($m['nama_menu']); ?>">
+                            <?php if (!empty($nama_foto)): ?>
+                                <img
+                                    src="<?= $url_foto_kasir . rawurlencode($nama_foto); ?>"
+                                    alt="<?= html_escape($m['nama_menu']); ?>"
+                                >
                             <?php endif; ?>
-                            <span class="dish-tag"><?= $kategori[$m['kategori']] ?? ucfirst($m['kategori']); ?></span>
+
+                            <span class="dish-tag">
+                                <?= $kategori[$m['kategori']] ?? ucfirst($m['kategori']); ?>
+                            </span>
                         </div>
 
                         <div class="dish-body">
                             <span class="dish-name"><?= html_escape($m['nama_menu']); ?></span>
+
                             <div class="dish-foot">
-                                <span class="dish-price">Rp <?= number_format($m['harga'], 0, ',', '.'); ?></span>
-                                <a class="dish-add" href="<?= site_url('cashier/add_cart/' . $m['id']); ?>"
+                                <span class="dish-price">
+                                    Rp <?= number_format($m['harga'], 0, ',', '.'); ?>
+                                </span>
+
+                                <a class="dish-add"
+                                   href="<?= site_url('cashier/add_cart/' . $m['id']); ?>"
                                    aria-label="Tambah <?= html_escape($m['nama_menu']); ?> ke keranjang">
                                     <i class="fa-solid fa-plus" aria-hidden="true"></i>
                                 </a>
@@ -86,6 +118,7 @@ $kategori = ['makanan' => 'Makanan', 'minuman' => 'Minuman', 'topping' => 'Toppi
                 <h4>Menu tidak ditemukan</h4>
                 <p>Coba kata kunci lain atau pilih kategori Semua.</p>
             </div>
+
         <?php else: ?>
             <div class="empty-state">
                 <i class="fa-solid fa-box-open" aria-hidden="true"></i>
@@ -98,7 +131,10 @@ $kategori = ['makanan' => 'Makanan', 'minuman' => 'Minuman', 'topping' => 'Toppi
     <!-- KERANJANG -->
     <aside class="panel panel-sticky">
         <div class="panel-head d-flex align-items-center justify-content-between">
-            <h3><i class="fa-solid fa-cart-shopping me-2" aria-hidden="true"></i>Keranjang Pesanan</h3>
+            <h3>
+                <i class="fa-solid fa-cart-shopping me-2" aria-hidden="true"></i>Keranjang Pesanan
+            </h3>
+
             <?php if (!empty($cart)): ?>
                 <span class="badge-soft is-brand"><?= count($cart); ?> item</span>
             <?php endif; ?>
@@ -110,17 +146,25 @@ $kategori = ['makanan' => 'Makanan', 'minuman' => 'Minuman', 'topping' => 'Toppi
                     <div class="cart-line">
                         <div class="me-auto">
                             <div class="line-name"><?= html_escape($item['nama_menu']); ?></div>
-                            <div class="line-price"><?= $item['qty']; ?>x @ Rp <?= number_format($item['harga'], 0, ',', '.'); ?></div>
+                            <div class="line-price">
+                                <?= $item['qty']; ?>x @ Rp <?= number_format($item['harga'], 0, ',', '.'); ?>
+                            </div>
                         </div>
+
                         <div class="text-end">
-                            <div class="line-sub money">Rp <?= number_format($item['subtotal'], 0, ',', '.'); ?></div>
-                            <a class="small text-danger" href="<?= site_url('cashier/remove_cart/' . $item['id']); ?>"
+                            <div class="line-sub money">
+                                Rp <?= number_format($item['subtotal'], 0, ',', '.'); ?>
+                            </div>
+
+                            <a class="small text-danger"
+                               href="<?= site_url('cashier/remove_cart/' . $item['id']); ?>"
                                aria-label="Hapus <?= html_escape($item['nama_menu']); ?> dari keranjang">
                                 <i class="fa-solid fa-trash-can me-1" aria-hidden="true"></i>Hapus
                             </a>
                         </div>
                     </div>
                 <?php endforeach; ?>
+
             <?php else: ?>
                 <div class="empty-state py-4">
                     <i class="fa-solid fa-basket-shopping" aria-hidden="true"></i>
@@ -133,7 +177,9 @@ $kategori = ['makanan' => 'Makanan', 'minuman' => 'Minuman', 'topping' => 'Toppi
         <div class="panel-foot">
             <div class="sum-row is-total mb-3">
                 <span>Total pembayaran</span>
-                <span class="value money">Rp <?= number_format($grand_total, 0, ',', '.'); ?></span>
+                <span class="value money">
+                    Rp <?= number_format($grand_total, 0, ',', '.'); ?>
+                </span>
             </div>
 
             <?php if (!empty($cart)): ?>
@@ -141,47 +187,73 @@ $kategori = ['makanan' => 'Makanan', 'minuman' => 'Minuman', 'topping' => 'Toppi
 
                     <div class="mb-3">
                         <label class="form-label" for="nama_pemesan">Nama pemesan</label>
-                        <input type="text" id="nama_pemesan" name="nama_pemesan" class="form-control" required
-                               placeholder="Contoh: Budi" autocomplete="off">
+                        <input type="text"
+                               id="nama_pemesan"
+                               name="nama_pemesan"
+                               class="form-control"
+                               required
+                               placeholder="Contoh: Budi"
+                               autocomplete="off">
                     </div>
 
                     <div class="mb-3">
                         <span class="form-label d-block">Jenis pesanan</span>
+
                         <div class="pay-options">
                             <input type="radio" id="jenis_takeaway" name="jenis_pesanan" value="Takeaway" checked>
-                            <label for="jenis_takeaway"><i class="fa-solid fa-bag-shopping me-1" aria-hidden="true"></i> Bungkus</label>
+                            <label for="jenis_takeaway">
+                                <i class="fa-solid fa-bag-shopping me-1" aria-hidden="true"></i> Bungkus
+                            </label>
 
                             <input type="radio" id="jenis_dinein" name="jenis_pesanan" value="Dine-in">
-                            <label for="jenis_dinein"><i class="fa-solid fa-chair me-1" aria-hidden="true"></i> Dine-in</label>
+                            <label for="jenis_dinein">
+                                <i class="fa-solid fa-chair me-1" aria-hidden="true"></i> Dine-in
+                            </label>
                         </div>
                     </div>
 
                     <div class="mb-3" id="box_meja" hidden>
                         <label class="form-label" for="nomor_meja">Nomor meja</label>
-                        <input type="number" id="nomor_meja" name="nomor_meja" class="form-control" min="1" placeholder="Contoh: 3">
+                        <input type="number"
+                               id="nomor_meja"
+                               name="nomor_meja"
+                               class="form-control"
+                               min="1"
+                               placeholder="Contoh: 3">
                     </div>
 
                     <div class="mb-3">
                         <span class="form-label d-block">Metode pembayaran</span>
+
                         <div class="pay-options">
                             <input type="radio" id="bayar_cash" name="metode_pembayaran" value="Cash" checked>
-                            <label for="bayar_cash"><i class="fa-solid fa-money-bill-wave me-1" aria-hidden="true"></i> Tunai</label>
+                            <label for="bayar_cash">
+                                <i class="fa-solid fa-money-bill-wave me-1" aria-hidden="true"></i> Tunai
+                            </label>
 
                             <input type="radio" id="bayar_qris" name="metode_pembayaran" value="QRIS">
-                            <label for="bayar_qris"><i class="fa-solid fa-qrcode me-1" aria-hidden="true"></i> QRIS</label>
+                            <label for="bayar_qris">
+                                <i class="fa-solid fa-qrcode me-1" aria-hidden="true"></i> QRIS
+                            </label>
                         </div>
                     </div>
 
                     <div class="mb-3" id="box_uang">
                         <label class="form-label" for="uang_bayar">Uang pembeli (Rp)</label>
-                        <input type="number" id="uang_bayar" name="uang_bayar" class="form-control" min="0"
-                               placeholder="Contoh: 50000" required>
+                        <input type="number"
+                               id="uang_bayar"
+                               name="uang_bayar"
+                               class="form-control"
+                               min="0"
+                               placeholder="Contoh: 50000"
+                               required>
                     </div>
 
                     <button type="submit" class="btn btn-primary btn-lg w-100 mt-2">
                         <i class="fa-solid fa-circle-check me-2" aria-hidden="true"></i> Proses Pembayaran
                     </button>
                 </form>
+
             <?php else: ?>
                 <button type="button" class="btn btn-light btn-lg w-100" disabled>
                     <i class="fa-solid fa-cart-plus me-2" aria-hidden="true"></i> Pilih menu dulu
@@ -209,18 +281,28 @@ $kategori = ['makanan' => 'Makanan', 'minuman' => 'Minuman', 'topping' => 'Toppi
 
         function sinkron() {
             var dineIn = nilai(jenis) === 'Dine-in';
+
             boxMeja.hidden = !dineIn;
             inputMeja.required = dineIn;
+
             if (!dineIn) inputMeja.value = '';
 
             var tunai = nilai(metode) === 'Cash';
+
             boxUang.hidden = !tunai;
             inputUang.required = tunai;
+
             if (!tunai) inputUang.value = '';
         }
 
-        Array.prototype.forEach.call(jenis, function (n) { n.addEventListener('change', sinkron); });
-        Array.prototype.forEach.call(metode, function (n) { n.addEventListener('change', sinkron); });
+        Array.prototype.forEach.call(jenis, function (n) {
+            n.addEventListener('change', sinkron);
+        });
+
+        Array.prototype.forEach.call(metode, function (n) {
+            n.addEventListener('change', sinkron);
+        });
+
         sinkron();
     })();
 </script>

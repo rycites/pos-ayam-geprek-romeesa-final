@@ -33,7 +33,19 @@
         <?php foreach ($meja as $m) : ?>
 
             <?php
-                $url_tujuan = base_url('pelanggan/meja/' . $m->id_meja);
+                /*
+                 * URL QR mengikuti host yang sedang digunakan.
+                 * localhost  -> localhost
+                 * IP Laptop -> IP Laptop
+                 */
+
+                $host_aktif = isset($_SERVER['HTTP_HOST'])
+                    ? $_SERVER['HTTP_HOST']
+                    : 'localhost';
+
+                $url_tujuan = 'http://' . $host_aktif
+                    . '/ayam-geprek-romeesa-final/index.php/pelanggan/meja/'
+                    . $m->id_meja;
 
                 $qr_api = "https://api.qrserver.com/v1/create-qr-code/?size=180x180&data="
                     . urlencode($url_tujuan);
@@ -66,7 +78,7 @@
 
                         <!-- LINK MEJA -->
                         <div class="owner-meja-url"
-                            title="<?= html_escape($url_tujuan); ?>">
+            title="<?= html_escape($url_tujuan); ?>">
 
                             <small class="text-muted">
                                 <?= html_escape($url_tujuan); ?>
