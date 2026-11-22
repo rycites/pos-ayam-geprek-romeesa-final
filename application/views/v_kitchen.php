@@ -3,99 +3,229 @@
 
 <?php
 $host_aktif = $_SERVER['HTTP_HOST'] ?? 'localhost';
+
 $protokol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
     ? 'https://'
     : 'http://';
 
 $url_foto_dapur = $protokol . $host_aktif . '/ayam-geprek-romeesa-final/uploads/foto_menu/';
+
+$total_pesanan = (isset($pesanan) && is_array($pesanan))
+    ? count($pesanan)
+    : 0;
 ?>
 
+<!-- HEADER HALAMAN DAPUR -->
 <div class="page-head">
     <div>
-        <h2><?= count($pesanan); ?> item pesanan menunggu</h2>
+        <h2><?= $total_pesanan; ?> item pesanan aktif</h2>
+        <p class="text-muted mb-0">
+            Kelola pesanan masuk dan proses masakan hingga selesai.
+        </p>
     </div>
+
     <span class="badge-soft is-ok">
-        <span class="dot" aria-hidden="true"></span> Dapur aktif, diperbarui tiap 10 detik
+        <span class="dot" aria-hidden="true"></span>
+        Dapur aktif, diperbarui tiap 10 detik
     </span>
 </div>
 
-<?php if (!empty($pesanan)): ?>
+<!-- DAFTAR PESANAN -->
+<?php if (!empty($pesanan) && is_array($pesanan)): ?>
+
     <div class="ticket-grid">
+
         <?php foreach ($pesanan as $p): ?>
+
             <?php
             $jumlah = isset($p['jumlah'])
-                ? $p['jumlah']
-                : (isset($p['qty']) ? $p['qty'] : 1);
+                ? (int) $p['jumlah']
+                : (isset($p['qty']) ? (int) $p['qty'] : 1);
+
+            $status = strtolower(trim($p['status'] ?? 'pending'));
 
             $nama_foto = !empty($p['foto'])
                 ? basename($p['foto'])
                 : '';
+
+            $id_detail = isset($p['id_detail'])
+                ? (int) $p['id_detail']
+                : 0;
+
+            $nama_menu = $p['nama_menu'] ?? 'Menu tidak ditemukan';
+
+            $nomor_meja = $p['nomor_meja'] ?? '-';
+
+            $no_faktur = $p['no_faktur'] ?? '-';
+
+            $waktu_pesanan = !empty($p['tanggal'])
+                ? date('H:i', strtotime($p['tanggal']))
+                : '-';
+
+            // INFORMASI STATUS
+            if ($status === 'pending') {
+                $label_status = 'Menunggu dimasak';
+                $badge_status = 'is-warn';
+                $ikon_status = 'fa-hourglass-half';
+            } elseif ($status === 'proses' || $status === 'diproses') {
+                $label_status = 'Sedang dimasak';
+                $badge_status = 'is-ok';
+                $ikon_status = 'fa-fire';
+            } elseif ($status === 'selesai') {
+                $label_status = 'Selesai';
+                $badge_status = 'is-ok';
+                $ikon_status = 'fa-circle-check';
+            } else {
+                $label_status = ucfirst($status);
+                $badge_status = 'is-warn';
+                $ikon_status = 'fa-clock';
+            }
             ?>
 
             <article class="ticket">
+
+                <!-- HEADER TIKET -->
                 <div class="ticket-head">
+
                     <span class="ticket-num">
-                        #<?= isset($p['no_faktur']) ? html_escape($p['no_faktur']) : '-'; ?>
+                        #<?= html_escape($no_faktur); ?>
                     </span>
 
                     <span class="badge-soft is-warn">
                         <i class="fa-solid fa-chair" aria-hidden="true"></i>
-                        <?= isset($p['nomor_meja']) ? html_escape($p['nomor_meja']) : '-'; ?>
+                        <?= html_escape($nomor_meja); ?>
                     </span>
+
                 </div>
 
+                <!-- BODY TIKET -->
                 <div class="ticket-body">
+
                     <div class="ticket-item">
 
+                        <!-- FOTO MENU -->
                         <?php if (!empty($nama_foto)): ?>
+
                             <img
                                 class="ticket-thumb"
-                                src="<?= $url_foto_dapur . rawurlencode($nama_foto); ?>"
-                                alt="<?= html_escape($p['nama_menu'] ?? 'Menu'); ?>"
+                                src="<?= html_escape($url_foto_dapur . rawurlencode($nama_foto)); ?>"
+                                alt="<?= html_escape($nama_menu); ?>"
+                                loading="lazy"
                             >
+
                         <?php else: ?>
+
                             <span class="ticket-thumb is-empty">
                                 <i class="fa-solid fa-utensils" aria-hidden="true"></i>
                             </span>
+
                         <?php endif; ?>
 
+                        <!-- INFORMASI MENU -->
                         <div class="me-auto">
+
                             <div class="fw-bold">
-                                <?= isset($p['nama_menu']) ? html_escape($p['nama_menu']) : 'Menu tidak ditemukan'; ?>
+                                <?= html_escape($nama_menu); ?>
                             </div>
 
                             <div class="text-muted small">
                                 <i class="fa-regular fa-clock me-1" aria-hidden="true"></i>
-                                <?= isset($p['tanggal']) ? date('H:i', strtotime($p['tanggal'])) : '-'; ?> WIB
+                                <?= html_escape($waktu_pesanan); ?> WIB
                             </div>
+
                         </div>
 
-                        <span class="qty-badge">x<?= $jumlah; ?></span>
+                        <!-- JUMLAH -->
+                        <span class="qty-badge">
+                            x<?= $jumlah; ?>
+                        </span>
+
                     </div>
+
+                    <!-- STATUS MASAK -->
+                    <div class="mt-3">
+
+                        <span class="badge-soft <?= $badge_status; ?>">
+                            <i class="fa-solid <?= $ikon_status; ?> me-1" aria-hidden="true"></i>
+                            <?= html_escape($label_status); ?>
+                        </span>
+
+                    </div>
+
                 </div>
 
+                <!-- FOOTER / TOMBOL AKSI -->
                 <div class="ticket-foot">
-                    <a
-                        href="<?= site_url('kitchen/selesai/' . (isset($p['id_detail']) ? $p['id_detail'] : '')); ?>"
-                        class="btn btn-primary w-100"
-                    >
-                        <i class="fa-solid fa-circle-check me-2" aria-hidden="true"></i>
-                        Tandai selesai
-                    </a>
+
+                    <?php if ($status === 'pending' && $id_detail > 0): ?>
+
+                        <a
+                            href="<?= site_url('kitchen/mulai/' . $id_detail); ?>"
+                            class="btn btn-primary w-100"
+                        >
+                            <i class="fa-solid fa-fire me-2" aria-hidden="true"></i>
+                            Mulai Masak
+                        </a>
+
+                    <?php elseif (($status === 'proses' || $status === 'diproses') && $id_detail > 0): ?>
+
+                        <a
+                            href="<?= site_url('kitchen/selesai/' . $id_detail); ?>"
+                            class="btn btn-success w-100"
+                        >
+                            <i class="fa-solid fa-circle-check me-2" aria-hidden="true"></i>
+                            Selesaikan Masakan
+                        </a>
+
+                    <?php elseif ($status === 'selesai'): ?>
+
+                        <button
+                            type="button"
+                            class="btn btn-secondary w-100"
+                            disabled
+                        >
+                            <i class="fa-solid fa-check me-2" aria-hidden="true"></i>
+                            Pesanan Selesai
+                        </button>
+
+                    <?php else: ?>
+
+                        <button
+                            type="button"
+                            class="btn btn-secondary w-100"
+                            disabled
+                        >
+                            Status pesanan tidak dikenali
+                        </button>
+
+                    <?php endif; ?>
+
                 </div>
+
             </article>
 
         <?php endforeach; ?>
+
     </div>
 
 <?php else: ?>
 
+    <!-- ANTREAN KOSONG -->
     <div class="card">
+
         <div class="empty-state">
+
             <i class="fa-solid fa-mug-hot" aria-hidden="true"></i>
+
             <h4>Dapur sedang kosong</h4>
-            <p>Semua pesanan sudah selesai. Pesanan baru akan muncul di sini tanpa perlu menyegar manual.</p>
+
+            <p>
+                Belum ada pesanan yang masuk ke dapur.
+                Pesanan baru akan muncul otomatis tanpa perlu menyegarkan halaman secara manual.
+            </p>
+
         </div>
+
     </div>
 
 <?php endif; ?>
