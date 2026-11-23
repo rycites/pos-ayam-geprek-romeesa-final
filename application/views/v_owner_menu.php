@@ -108,13 +108,24 @@ $url_foto_owner = $protokol . $host_aktif . '/ayam-geprek-romeesa-final/uploads/
                                     <i class="fa-solid fa-pen" aria-hidden="true"></i> Ubah
                                 </button>
 
-                                <a
-                                    href="<?= site_url('owner/hapus_menu/' . $m['id']); ?>"
-                                    class="btn btn-outline-danger btn-sm"
-                                    onclick="return confirm('Hapus menu ini beserta fotonya?');"
+                                <form
+                                    action="<?= site_url('owner/hapus_menu/' . $m['id']); ?>"
+                                    method="POST"
+                                    class="d-inline"
                                 >
-                                    <i class="fa-solid fa-trash-can" aria-hidden="true"></i> Hapus
-                                </a>
+                                    <input
+                                        type="hidden"
+                                        name="<?= $this->security->get_csrf_token_name(); ?>"
+                                        value="<?= $this->security->get_csrf_hash(); ?>"
+                                    >
+                                    <button
+                                        type="submit"
+                                        class="btn btn-outline-danger btn-sm"
+                                        onclick="return confirm('Hapus menu ini dari daftar?');"
+                                    >
+                                        <i class="fa-solid fa-trash-can" aria-hidden="true"></i> Hapus
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -148,6 +159,12 @@ $url_foto_owner = $protokol . $host_aktif . '/ayam-geprek-romeesa-final/uploads/
                         method="POST"
                         enctype="multipart/form-data"
                     >
+                        <input
+                            type="hidden"
+                            name="<?= $this->security->get_csrf_token_name(); ?>"
+                            value="<?= $this->security->get_csrf_hash(); ?>"
+                        >
+
                         <div class="modal-header">
                             <h5 class="modal-title" id="modalEditLabel<?= $m['id']; ?>">Ubah menu</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
@@ -234,6 +251,12 @@ $url_foto_owner = $protokol . $host_aktif . '/ayam-geprek-romeesa-final/uploads/
                 method="POST"
                 enctype="multipart/form-data"
             >
+                <input
+                    type="hidden"
+                    name="<?= $this->security->get_csrf_token_name(); ?>"
+                    value="<?= $this->security->get_csrf_hash(); ?>"
+                >
+
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalTambahLabel">Tambah menu baru</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>

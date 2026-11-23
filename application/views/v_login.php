@@ -129,6 +129,12 @@ if (file_exists($file_aktif)) {
 
             <form action="<?= site_url('auth/loginProcess'); ?>" method="POST">
 
+                <input
+                    type="hidden"
+                    name="<?= $this->security->get_csrf_token_name(); ?>"
+                    value="<?= $this->security->get_csrf_hash(); ?>"
+                >
+
                 <div class="mb-3">
                     <label class="form-label" for="username">Username</label>
 

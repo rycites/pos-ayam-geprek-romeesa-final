@@ -240,14 +240,25 @@ $total_menu = (isset($menu) && is_array($menu))
 
                                 <?php if ($id_menu !== ''): ?>
 
-                                    <a
-                                        class="dish-add"
-                                        href="<?= site_url('cashier/add_cart/' . $id_menu); ?>"
-                                        aria-label="Tambah <?= html_escape($nama_menu); ?> ke keranjang"
-                                        title="Tambah ke keranjang"
+                                    <form
+                                        action="<?= site_url('cashier/add_cart/' . $id_menu); ?>"
+                                        method="POST"
+                                        class="d-inline"
                                     >
-                                        <i class="fa-solid fa-plus" aria-hidden="true"></i>
-                                    </a>
+                                        <input
+                                            type="hidden"
+                                            name="<?= $this->security->get_csrf_token_name(); ?>"
+                                            value="<?= $this->security->get_csrf_hash(); ?>"
+                                        >
+                                        <button
+                                            type="submit"
+                                            class="dish-add"
+                                            aria-label="Tambah <?= html_escape($nama_menu); ?> ke keranjang"
+                                            title="Tambah ke keranjang"
+                                        >
+                                            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
 
                                 <?php else: ?>
 
@@ -382,15 +393,26 @@ $total_menu = (isset($menu) && is_array($menu))
 
                             <?php if ($id_cart !== ''): ?>
 
-                                <a
-                                    class="small text-danger"
-                                    href="<?= site_url('cashier/remove_cart/' . $id_cart); ?>"
-                                    aria-label="Hapus <?= html_escape($nama_cart); ?> dari keranjang"
-                                    onclick="return confirm('Hapus <?= html_escape($nama_cart); ?> dari keranjang?');"
+                                <form
+                                    action="<?= site_url('cashier/remove_cart/' . $id_cart); ?>"
+                                    method="POST"
+                                    class="d-inline"
                                 >
-                                    <i class="fa-solid fa-trash-can me-1" aria-hidden="true"></i>
-                                    Hapus
-                                </a>
+                                    <input
+                                        type="hidden"
+                                        name="<?= $this->security->get_csrf_token_name(); ?>"
+                                        value="<?= $this->security->get_csrf_hash(); ?>"
+                                    >
+                                    <button
+                                        type="submit"
+                                        class="small text-danger border-0 bg-transparent p-0"
+                                        aria-label="Hapus <?= html_escape($nama_cart); ?> dari keranjang"
+                                        onclick="return confirm('Hapus <?= html_escape($nama_cart); ?> dari keranjang?');"
+                                    >
+                                        <i class="fa-solid fa-trash-can me-1" aria-hidden="true"></i>
+                                        Hapus
+                                    </button>
+                                </form>
 
                             <?php endif; ?>
 
@@ -446,6 +468,12 @@ $total_menu = (isset($menu) && is_array($menu))
                     method="POST"
                     id="form_checkout"
                 >
+
+                    <input
+                        type="hidden"
+                        name="<?= $this->security->get_csrf_token_name(); ?>"
+                        value="<?= $this->security->get_csrf_hash(); ?>"
+                    >
 
                     <!-- NAMA PEMESAN -->
 

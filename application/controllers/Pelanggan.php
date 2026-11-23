@@ -22,6 +22,14 @@ class Pelanggan extends CI_Controller {
     }
 
     // =====================================================
+    // KERANJANG DIPISAH PER MEJA
+    // =====================================================
+    private function cart_key($no_meja)
+    {
+        return 'cart_pelanggan_' . (int)$no_meja;
+    }
+
+    // =====================================================
     // HALAMAN MENU PELANGGAN
     // =====================================================
     public function meja($no_meja = 1)
@@ -35,7 +43,7 @@ class Pelanggan extends CI_Controller {
             ->get('menu')
             ->result_array();
 
-        $cart = $this->session->userdata('cart_pelanggan');
+        $cart = $this->session->userdata($this->cart_key($no_meja));
 
         if (!is_array($cart)) {
             $cart = [];
@@ -55,6 +63,11 @@ class Pelanggan extends CI_Controller {
     // =====================================================
     public function add_cart($id_menu, $no_meja = 1)
     {
+        if ($this->input->method() !== 'post') {
+            redirect('pelanggan/meja/' . (int)$no_meja);
+            return;
+        }
+
         $id_menu = (int)$id_menu;
         $no_meja = (int)$no_meja;
 
@@ -69,7 +82,7 @@ class Pelanggan extends CI_Controller {
             return;
         }
 
-        $cart = $this->session->userdata('cart_pelanggan');
+        $cart = $this->session->userdata($this->cart_key($no_meja));
 
         if (!is_array($cart)) {
             $cart = [];
@@ -85,13 +98,13 @@ class Pelanggan extends CI_Controller {
                 'id_menu'   => $id_menu,
                 'nama_menu' => $menu['nama_menu'],
                 'harga'     => $menu['harga'],
-                'gambar'    => isset($menu['gambar']) ? $menu['gambar'] : '',
+                'gambar'    => '',
                 'jumlah'    => 1,
                 'subtotal'  => $menu['harga']
             ];
         }
 
-        $this->session->set_userdata('cart_pelanggan', $cart);
+        $this->session->set_userdata($this->cart_key($no_meja), $cart);
 
         redirect('pelanggan/meja/' . $no_meja);
     }
@@ -101,15 +114,21 @@ class Pelanggan extends CI_Controller {
     // =====================================================
     public function remove_cart($id_menu, $no_meja = 1)
     {
+        if ($this->input->method() !== 'post') {
+            redirect('pelanggan/meja/' . (int)$no_meja);
+            return;
+        }
+
         $id_menu = (int)$id_menu;
         $no_meja = (int)$no_meja;
 
-        $cart = $this->session->userdata('cart_pelanggan');
+        $cart_key = $this->cart_key($no_meja);
+        $cart     = $this->session->userdata($cart_key);
 
         if (is_array($cart) && isset($cart[$id_menu])) {
             unset($cart[$id_menu]);
 
-            $this->session->set_userdata('cart_pelanggan', $cart);
+            $this->session->set_userdata($cart_key, $cart);
         }
 
         redirect('pelanggan/meja/' . $no_meja);
@@ -120,31 +139,90 @@ class Pelanggan extends CI_Controller {
     // =====================================================
     public function checkout($no_meja = 1)
     {
-        $no_meja = (int)$no_meja;
+        if ($this->input->method() !== 'post') {
+            redirect('pelanggan/meja/' . (int)$no_meja);
+            return;
+        }
 
-        $cart = $this->session->userdata('cart_pelanggan');
+        $no_meja  = (int)$no_meja;
+        $cart_key = $this->cart_key($no_meja);
 
-        if (empty($cart) || !is_array($cart)) {
+        $cart_session = $this->session->userdata($cart_key);
+
+        if (empty($cart_session) || !is_array($cart_session)) {
             redirect('pelanggan/meja/' . $no_meja);
             return;
         }
 
-        $nama_pelanggan = trim($this->input->post('nama_pelanggan'));
+        $nama_pelanggan = trim((string) $this->input->post('nama_pelanggan', true));
         $metode = $this->input->post('metode_pembayaran');
 
-        if ($nama_pelanggan == '') {
+        if ($nama_pelanggan === '') {
             $nama_pelanggan = 'Pelanggan';
         }
 
-        if (!in_array($metode, ['Cash', 'QRIS'])) {
+        if (!in_array($metode, ['Cash', 'QRIS'], TRUE)) {
             $metode = 'Cash';
         }
 
-        // Hitung total pesanan
+        // -------------------------------------------------
+        // VALIDASI ULANG KERANJANG DARI DATABASE
+        // -------------------------------------------------
+        $cart  = [];
         $total = 0;
 
-        foreach ($cart as $item) {
-            $total += (int)$item['subtotal'];
+        foreach ($cart_session as $id_menu => $item) {
+            $id_menu = (int) $id_menu;
+            $jumlah  = isset($item['jumlah']) ? (int) $item['jumlah'] : 0;
+
+            if ($id_menu <= 0 || $jumlah <= 0) {
+                $this->session->set_flashdata(
+                    'error',
+                    'Data keranjang tidak valid. Silakan perbarui keranjang.'
+                );
+
+                redirect('pelanggan/meja/' . $no_meja);
+                return;
+            }
+
+            $menu = $this->db
+                ->where('id', $id_menu)
+                ->where('status', 'tersedia')
+                ->get('menu')
+                ->row_array();
+
+            if (!$menu) {
+                $this->session->set_flashdata(
+                    'error',
+                    'Salah satu menu di keranjang sudah tidak tersedia. Silakan perbarui keranjang.'
+                );
+
+                redirect('pelanggan/meja/' . $no_meja);
+                return;
+            }
+
+            $harga    = (float) $menu['harga'];
+            $subtotal = $harga * $jumlah;
+
+            $cart[$id_menu] = [
+                'id_menu'   => $menu['id'],
+                'nama_menu' => $menu['nama_menu'],
+                'harga'     => $harga,
+                'jumlah'    => $jumlah,
+                'subtotal'  => $subtotal
+            ];
+
+            $total += $subtotal;
+        }
+
+        if ($total <= 0) {
+            $this->session->set_flashdata(
+                'error',
+                'Total pesanan tidak valid.'
+            );
+
+            redirect('pelanggan/meja/' . $no_meja);
+            return;
         }
 
         $no_faktur = 'TRX-' . date('Ymd') . '-' . rand(100, 999);
@@ -171,6 +249,18 @@ class Pelanggan extends CI_Controller {
 
         $id_transaksi = $this->db->insert_id();
 
+        if (!$id_transaksi) {
+            $this->db->trans_rollback();
+
+            $this->session->set_flashdata(
+                'error',
+                'Pesanan gagal disimpan. Silakan coba lagi.'
+            );
+
+            redirect('pelanggan/meja/' . $no_meja);
+            return;
+        }
+
         // -------------------------------------------------
         // SIMPAN DETAIL TRANSAKSI
         // -------------------------------------------------
@@ -190,7 +280,12 @@ class Pelanggan extends CI_Controller {
         if ($this->db->trans_status() === FALSE) {
             $this->db->trans_rollback();
 
-            echo 'Gagal menyimpan transaksi.';
+            $this->session->set_flashdata(
+                'error',
+                'Pesanan gagal disimpan. Silakan coba lagi.'
+            );
+
+            redirect('pelanggan/meja/' . $no_meja);
             return;
         }
 
@@ -218,7 +313,7 @@ class Pelanggan extends CI_Controller {
         // -------------------------------------------------
         // KOSONGKAN KERANJANG
         // -------------------------------------------------
-        $this->session->unset_userdata('cart_pelanggan');
+        $this->session->unset_userdata($cart_key);
 
         redirect('pelanggan/status/' . $no_meja);
     }
@@ -333,6 +428,11 @@ class Pelanggan extends CI_Controller {
     // =====================================================
     public function reset_sesi_meja($no_meja = 1)
     {
+        if ($this->input->method() !== 'post') {
+            redirect('pelanggan/meja/' . (int)$no_meja);
+            return;
+        }
+
         $no_meja = (int)$no_meja;
 
         $session_key = 'active_order_table_' . $no_meja;
@@ -341,7 +441,7 @@ class Pelanggan extends CI_Controller {
         $this->session->unset_userdata($session_key);
         delete_cookie($cookie_name, '', '/', '');
 
-        $this->session->unset_userdata('cart_pelanggan');
+        $this->session->unset_userdata($this->cart_key($no_meja));
 
         redirect('pelanggan/meja/' . $no_meja);
     }

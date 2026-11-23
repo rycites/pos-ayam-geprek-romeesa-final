@@ -50,6 +50,11 @@ class Cashier extends CI_Controller {
     // =====================================================
     public function add_cart($id_menu)
     {
+        if ($this->input->method() !== 'post') {
+            redirect('cashier');
+            return;
+        }
+
         $menu = $this->db->get_where('menu', [
             'id'     => $id_menu,
             'status' => 'tersedia'
@@ -95,6 +100,11 @@ class Cashier extends CI_Controller {
     // =====================================================
     public function remove_cart($id_menu)
     {
+        if ($this->input->method() !== 'post') {
+            redirect('cashier');
+            return;
+        }
+
         $cart = $this->session->userdata('cart') ?: [];
 
         if (isset($cart[$id_menu])) {
@@ -111,15 +121,20 @@ class Cashier extends CI_Controller {
     // =====================================================
     public function checkout()
     {
-        $cart = $this->session->userdata('cart');
+        if ($this->input->method() !== 'post') {
+            redirect('cashier');
+            return;
+        }
+
+        $cart_session = $this->session->userdata('cart');
 
         $uang_bayar        = $this->input->post('uang_bayar');
-        $nama_pemesan      = trim($this->input->post('nama_pemesan') ?? '');
+        $nama_pemesan      = trim((string) $this->input->post('nama_pemesan', true));
         $jenis_pesanan     = $this->input->post('jenis_pesanan');
-        $nomor_meja        = $this->input->post('nomor_meja');
+        $nomor_meja        = trim((string) $this->input->post('nomor_meja', true));
         $metode_pembayaran = $this->input->post('metode_pembayaran') ?: 'Cash';
 
-        if (empty($cart) || empty($nama_pemesan)) {
+        if (empty($cart_session) || !is_array($cart_session) || $nama_pemesan === '') {
             $this->session->set_flashdata(
                 'error',
                 'Keranjang kosong atau nama pemesan belum diisi!'
@@ -129,17 +144,43 @@ class Cashier extends CI_Controller {
             return;
         }
 
+        if (!in_array($jenis_pesanan, ['Dine-in', 'Takeaway'], TRUE)) {
+            $this->session->set_flashdata(
+                'error',
+                'Jenis pesanan tidak valid!'
+            );
+
+            redirect('cashier');
+            return;
+        }
+
+        if ($jenis_pesanan === 'Dine-in') {
+            if (
+                $nomor_meja === '' ||
+                !ctype_digit($nomor_meja) ||
+                (int) $nomor_meja < 1
+            ) {
+                $this->session->set_flashdata(
+                    'error',
+                    'Nomor meja wajib diisi dengan benar untuk pesanan Dine-in!'
+                );
+
+                redirect('cashier');
+                return;
+            }
+        }
+
         // =================================================
-        // HITUNG TOTAL
+        // VALIDASI ULANG KERANJANG DARI DATABASE
         // =================================================
+        $cart        = [];
         $total_bayar = 0;
 
-        foreach ($cart as $item) {
-            if (
-                !isset($item['harga']) ||
-                !isset($item['qty']) ||
-                !isset($item['subtotal'])
-            ) {
+        foreach ($cart_session as $id_menu => $item) {
+            $id_menu = (int) $id_menu;
+            $qty     = isset($item['qty']) ? (int) $item['qty'] : 0;
+
+            if ($id_menu <= 0 || $qty <= 0) {
                 $this->session->set_flashdata(
                     'error',
                     'Data keranjang tidak valid!'
@@ -149,7 +190,33 @@ class Cashier extends CI_Controller {
                 return;
             }
 
-            $total_bayar += (float)$item['subtotal'];
+            $menu = $this->db->get_where('menu', [
+                'id'     => $id_menu,
+                'status' => 'tersedia'
+            ])->row_array();
+
+            if (!$menu) {
+                $this->session->set_flashdata(
+                    'error',
+                    'Salah satu menu di keranjang sudah tidak tersedia. Silakan perbarui keranjang.'
+                );
+
+                redirect('cashier');
+                return;
+            }
+
+            $harga    = (float) $menu['harga'];
+            $subtotal = $harga * $qty;
+
+            $cart[$id_menu] = [
+                'id'        => $menu['id'],
+                'nama_menu' => $menu['nama_menu'],
+                'harga'     => $harga,
+                'qty'       => $qty,
+                'subtotal'  => $subtotal
+            ];
+
+            $total_bayar += $subtotal;
         }
 
         if ($total_bayar <= 0) {
@@ -161,6 +228,8 @@ class Cashier extends CI_Controller {
             redirect('cashier');
             return;
         }
+
+        $this->session->set_userdata('cart', $cart);
 
         // =================================================
         // VALIDASI METODE PEMBAYARAN
@@ -230,7 +299,7 @@ class Cashier extends CI_Controller {
             'jenis_pesanan'     => $jenis_pesanan,
             'nomor_meja'        => $keterangan_tempat,
             'metode_pembayaran' => $metode_pembayaran,
-            'status_bayar'      => 'Lunas'
+            'status_bayar'      => 'lunas'
         ];
 
         $this->db->trans_begin();
@@ -325,6 +394,11 @@ class Cashier extends CI_Controller {
     // =====================================================
     public function bayar_pesanan_meja($id_transaksi)
     {
+        if ($this->input->method() !== 'post') {
+            redirect('cashier/antrean_meja');
+            return;
+        }
+
         // =================================================
         // AMBIL TRANSAKSI
         // =================================================
@@ -434,7 +508,7 @@ class Cashier extends CI_Controller {
         $this->db->where('LOWER(status_bayar)', 'pending');
 
         $this->db->update('transaksi', [
-            'status_bayar'    => 'Lunas',
+            'status_bayar'    => 'lunas',
             'uang_bayar'      => $uang_bayar,
             'uang_kembalian'  => $uang_kembalian,
             'id_kasir'        => $this->session->userdata('id')
@@ -514,6 +588,39 @@ class Cashier extends CI_Controller {
     // =====================================================
     public function struk($id_transaksi)
     {
+        $id_transaksi = (int) $id_transaksi;
+
+        // =================================================
+        // BATASI AKSES STRUK
+        // Kasir/owner yang login, atau pelanggan yang
+        // transaksinya tersimpan di session meja.
+        // =================================================
+        $boleh_akses = FALSE;
+
+        if (
+            $this->session->userdata('logged_in') &&
+            in_array($this->session->userdata('role'), ['kasir', 'owner'], TRUE)
+        ) {
+            $boleh_akses = TRUE;
+        }
+
+        if (!$boleh_akses) {
+            foreach ($this->session->all_userdata() as $key => $value) {
+                if (
+                    strpos($key, 'active_order_table_') === 0 &&
+                    (int) $value === $id_transaksi
+                ) {
+                    $boleh_akses = TRUE;
+                    break;
+                }
+            }
+        }
+
+        if (!$boleh_akses) {
+            show_404();
+            return;
+        }
+
         $data['transaksi'] = $this->db->get_where('transaksi', [
             'id_transaksi' => $id_transaksi
         ])->row_array();
@@ -523,13 +630,33 @@ class Cashier extends CI_Controller {
             return;
         }
 
-        $data['detail_transaksi'] = $this->db
+        $detail = $this->db
             ->select('detail_transaksi.*, menu.nama_menu, menu.harga')
             ->from('detail_transaksi')
-            ->join('menu', 'menu.id = detail_transaksi.id_menu')
+            ->join('menu', 'menu.id = detail_transaksi.id_menu', 'left')
             ->where('detail_transaksi.id_transaksi', $id_transaksi)
             ->get()
             ->result_array();
+
+        // Menu yang sudah dihapus tetap ditampilkan semaksimal mungkin
+        foreach ($detail as $i => $item) {
+            $jumlah   = (int) ($item['jumlah'] ?? 0);
+            $subtotal = (float) ($item['subtotal'] ?? 0);
+
+            if (empty($item['nama_menu'])) {
+                $detail[$i]['nama_menu'] = 'Menu #' . (int) ($item['id_menu'] ?? 0);
+            }
+
+            if (
+                !isset($item['harga']) ||
+                $item['harga'] === NULL ||
+                (float) $item['harga'] <= 0
+            ) {
+                $detail[$i]['harga'] = $jumlah > 0 ? $subtotal / $jumlah : 0;
+            }
+        }
+
+        $data['detail_transaksi'] = $detail;
 
         if ((int)$data['transaksi']['id_kasir'] > 0) {
 

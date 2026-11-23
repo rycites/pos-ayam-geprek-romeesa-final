@@ -5,7 +5,12 @@ $ci          =& get_instance();
 $nama        = (string) $ci->session->userdata('nama');
 $username    = (string) $ci->session->userdata('username');
 $inisial     = strtoupper(mb_substr($nama !== '' ? $nama : $username, 0, 1));
-$jml_pesanan = $ci->db->where('status', 'pending')->count_all_results('detail_transaksi');
+$jml_pesanan = $ci->db
+    ->from('detail_transaksi')
+    ->join('transaksi', 'transaksi.id_transaksi = detail_transaksi.id_transaksi')
+    ->where('detail_transaksi.status', 'pending')
+    ->where('LOWER(transaksi.status_bayar)', 'lunas')
+    ->count_all_results();
 
 $nama_bulan = [1 => 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 $tanggal_ini = date('d') . ' ' . $nama_bulan[(int) date('n')] . ' ' . date('Y');
@@ -85,9 +90,12 @@ $tanggal_ini = date('d') . ' ' . $nama_bulan[(int) date('n')] . ' ' . date('Y');
                         <li><span class="dropdown-item-text small text-muted">Masuk sebagai <strong><?= html_escape($username); ?></strong></span></li>
                         <li><hr class="dropdown-divider"></li>
                         <li>
-                            <a class="dropdown-item text-danger" href="<?= site_url('auth/logout'); ?>">
-                                <i class="fa-solid fa-right-from-bracket me-2" aria-hidden="true"></i> Keluar
-                            </a>
+                            <form action="<?= site_url('auth/logout'); ?>" method="POST">
+                                <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
+                                <button type="submit" class="dropdown-item text-danger">
+                                    <i class="fa-solid fa-right-from-bracket me-2" aria-hidden="true"></i> Keluar
+                                </button>
+                            </form>
                         </li>
                     </ul>
                 </div>

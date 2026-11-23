@@ -293,13 +293,15 @@ $label_status = [
 
             <?php if ($is_semua_selesai): ?>
 
-                <a
-                    href="<?= site_url('pelanggan/reset_sesi_meja/' . $no_m); ?>"
-                    class="btn btn-primary"
-                >
-                    <i class="fa-solid fa-utensils me-2" aria-hidden="true"></i>
-                    Selesai, buat pesanan baru
-                </a>
+                <form action="<?= site_url('pelanggan/reset_sesi_meja/' . $no_m); ?>" method="POST">
+                    <input type="hidden"
+                           name="<?= $this->security->get_csrf_token_name(); ?>"
+                           value="<?= $this->security->get_csrf_hash(); ?>">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fa-solid fa-utensils me-2" aria-hidden="true"></i>
+                        Selesai, buat pesanan baru
+                    </button>
+                </form>
 
                 <a
                     href="<?= site_url('pelanggan/meja/' . $no_m); ?>"

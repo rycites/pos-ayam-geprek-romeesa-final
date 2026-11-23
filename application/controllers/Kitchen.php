@@ -47,7 +47,8 @@ class Kitchen extends CI_Controller {
 
         $this->db->join(
             'menu',
-            'menu.id = detail_transaksi.id_menu'
+            'menu.id = detail_transaksi.id_menu',
+            'left'
         );
 
         $this->db->join(
@@ -62,7 +63,7 @@ class Kitchen extends CI_Controller {
         );
 
         // Pesanan belum lunas tidak boleh masuk dapur
-        $this->db->where('transaksi.status_bayar', 'Lunas');
+        $this->db->where('LOWER(transaksi.status_bayar) =', 'lunas');
 
         $this->db->order_by('transaksi.tanggal', 'ASC');
         $this->db->limit(50);
@@ -91,6 +92,11 @@ class Kitchen extends CI_Controller {
     // =====================================================
     public function mulai($id_detail)
     {
+        if ($this->input->method() !== 'post') {
+            redirect('kitchen');
+            return;
+        }
+
         $detail = $this->db->get_where('detail_transaksi', [
             'id_detail' => $id_detail
         ])->row_array();
@@ -99,6 +105,16 @@ class Kitchen extends CI_Controller {
             $this->session->set_flashdata(
                 'error',
                 'Detail pesanan tidak ditemukan!'
+            );
+
+            redirect('kitchen');
+            return;
+        }
+
+        if (!$this->_pesanan_sudah_lunas($detail['id_transaksi'])) {
+            $this->session->set_flashdata(
+                'error',
+                'Pesanan belum lunas sehingga belum bisa diproses dapur!'
             );
 
             redirect('kitchen');
@@ -145,6 +161,11 @@ class Kitchen extends CI_Controller {
     // =====================================================
     public function selesai($id_detail)
     {
+        if ($this->input->method() !== 'post') {
+            redirect('kitchen');
+            return;
+        }
+
         $detail = $this->db->get_where('detail_transaksi', [
             'id_detail' => $id_detail
         ])->row_array();
@@ -153,6 +174,16 @@ class Kitchen extends CI_Controller {
             $this->session->set_flashdata(
                 'error',
                 'Detail pesanan tidak ditemukan!'
+            );
+
+            redirect('kitchen');
+            return;
+        }
+
+        if (!$this->_pesanan_sudah_lunas($detail['id_transaksi'])) {
+            $this->session->set_flashdata(
+                'error',
+                'Pesanan belum lunas sehingga belum bisa diselesaikan dapur!'
             );
 
             redirect('kitchen');
@@ -194,5 +225,18 @@ class Kitchen extends CI_Controller {
         }
 
         redirect('kitchen');
+    }
+
+    // =====================================================
+    // CEK STATUS PEMBAYARAN PESANAN
+    // =====================================================
+    private function _pesanan_sudah_lunas($id_transaksi)
+    {
+        $transaksi = $this->db->get_where('transaksi', [
+            'id_transaksi' => $id_transaksi
+        ])->row_array();
+
+        return $transaksi &&
+            strtolower(trim($transaksi['status_bayar'])) === 'lunas';
     }
 }

@@ -9,7 +9,7 @@ class Auth extends CI_Controller {
         parent::__construct();
         $this->load->database();
         $this->load->library(['session']);
-        $this->load->helper(['url', 'form']);
+        $this->load->helper(['url', 'form', 'password']);
     }
 
     // =====================================================
@@ -40,51 +40,69 @@ class Auth extends CI_Controller {
     // =====================================================
     public function loginProcess()
     {
-        $username = $this->input->post('username', true);
-        $password = md5($this->input->post('password'));
+        if ($this->input->method() !== 'post') {
+            redirect('auth');
+            return;
+        }
+
+        $username = trim((string) $this->input->post('username', true));
+        $password = (string) $this->input->post('password');
+
+        if ($username === '' || $password === '') {
+            $this->session->set_flashdata('msg', 'Username dan password wajib diisi!');
+            redirect('auth');
+            return;
+        }
 
         $user = $this->db
             ->get_where('users', ['username' => $username])
             ->row_array();
 
-        if ($user) {
-
-            if ($user['password'] == $password) {
-
-                // Simpan session login karyawan
-                $sesData = [
-                    'id'        => $user['id'],
-                    'nama'      => $user['nama'],
-                    'username'  => $user['username'],
-                    'role'      => $user['role'],
-                    'logged_in' => TRUE
-                ];
-
-                $this->session->set_userdata($sesData);
-
-                // Arahkan sesuai role
-                if ($user['role'] == 'kasir') {
-                    redirect('cashier');
-                    return;
-                } elseif ($user['role'] == 'owner') {
-                    redirect('owner');
-                    return;
-                } elseif ($user['role'] == 'dapur') {
-                    redirect('kitchen');
-                    return;
-                } else {
-                    redirect('auth');
-                    return;
-                }
-
-            } else {
-                $this->session->set_flashdata('msg', 'Password salah!');
-                redirect('auth');
-                return;
-            }
-
-        } else {
+        if (!$user) {
             $this->session->set_flashdata('msg', 'Username tidak ditemukan!');
+            redirect('auth');
+            return;
+        }
+
+        $perlu_rehash = FALSE;
+
+        if (!romeosa_verify_password($password, $user['password'], $perlu_rehash)) {
+            $this->session->set_flashdata('msg', 'Password salah!');
+            redirect('auth');
+            return;
+        }
+
+        // Akun lama (MD5) otomatis ditingkatkan ke hash yang lebih aman.
+        if ($perlu_rehash) {
+            $this->db->where('id', $user['id']);
+            $this->db->update('users', [
+                'password' => romeosa_hash_password($password)
+            ]);
+        }
+
+        // Simpan session login karyawan
+        $sesData = [
+            'id'        => $user['id'],
+            'nama'      => $user['nama'],
+            'username'  => $user['username'],
+            'role'      => $user['role'],
+            'logged_in' => TRUE
+        ];
+
+        $this->session->set_userdata($sesData);
+        $this->session->sess_regenerate(TRUE);
+
+        // Arahkan sesuai role
+        if ($user['role'] == 'kasir') {
+            redirect('cashier');
+            return;
+        } elseif ($user['role'] == 'owner') {
+            redirect('owner');
+            return;
+        } elseif ($user['role'] == 'dapur') {
+            redirect('kitchen');
+            return;
+        } else {
             redirect('auth');
             return;
         }
@@ -96,6 +114,11 @@ class Auth extends CI_Controller {
     // =====================================================
     public function logout()
     {
+        if ($this->input->method() !== 'post') {
+            redirect('auth');
+            return;
+        }
+
         $this->session->unset_userdata([
             'id',
             'nama',

@@ -2,10 +2,7 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-$cart = $this->session->userdata('cart_pelanggan');
-if (!is_array($cart)) {
-    $cart = [];
-}
+$cart = isset($cart) && is_array($cart) ? $cart : [];
 
 // Samakan nama nomor meja dengan data dari controller
 $no_meja = isset($nomor_meja) ? $nomor_meja : (isset($no_meja) ? $no_meja : 1);
@@ -185,11 +182,18 @@ $folder_foto_menu = 'uploads/foto_menu/';
                                     <i class="fa-solid fa-ban"></i>
                                 </button>
                             <?php else: ?>
-                                <a class="dish-add"
-                                   href="<?= site_url('pelanggan/add_cart/' . $m['id'] . '/' . $no_meja); ?>"
-                                   aria-label="Tambah <?= html_escape($m['nama_menu']); ?>">
-                                    <i class="fa-solid fa-plus"></i>
-                                </a>
+                                <form action="<?= site_url('pelanggan/add_cart/' . $m['id'] . '/' . $no_meja); ?>"
+                                      method="POST"
+                                      class="d-inline">
+                                    <input type="hidden"
+                                           name="<?= $this->security->get_csrf_token_name(); ?>"
+                                           value="<?= $this->security->get_csrf_hash(); ?>">
+                                    <button type="submit"
+                                            class="dish-add"
+                                            aria-label="Tambah <?= html_escape($m['nama_menu']); ?>">
+                                        <i class="fa-solid fa-plus"></i>
+                                    </button>
+                                </form>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -303,11 +307,18 @@ $folder_foto_menu = 'uploads/foto_menu/';
                                 Rp <?= number_format($item['subtotal'], 0, ',', '.'); ?>
                             </div>
 
-                            <a class="small text-danger"
-                               href="<?= site_url('pelanggan/remove_cart/' . $id_menu . '/' . $no_meja); ?>">
-                                <i class="fa-solid fa-trash-can me-1"></i>
-                                Hapus
-                            </a>
+                            <form action="<?= site_url('pelanggan/remove_cart/' . $id_menu . '/' . $no_meja); ?>"
+                                  method="POST"
+                                  class="d-inline">
+                                <input type="hidden"
+                                       name="<?= $this->security->get_csrf_token_name(); ?>"
+                                       value="<?= $this->security->get_csrf_hash(); ?>">
+                                <button type="submit"
+                                        class="small text-danger border-0 bg-transparent p-0">
+                                    <i class="fa-solid fa-trash-can me-1"></i>
+                                    Hapus
+                                </button>
+                            </form>
                         </div>
 
                     </div>
@@ -328,6 +339,10 @@ $folder_foto_menu = 'uploads/foto_menu/';
             <form action="<?= site_url('pelanggan/checkout/' . $no_meja); ?>"
                   method="POST"
                   class="mt-4">
+
+                <input type="hidden"
+                       name="<?= $this->security->get_csrf_token_name(); ?>"
+                       value="<?= $this->security->get_csrf_hash(); ?>">
 
                 <div class="mb-3">
                     <label class="form-label" for="nama_pelanggan">Nama Anda</label>

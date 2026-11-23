@@ -77,10 +77,15 @@ $kelas_role  = ['owner' => 'is-brand', 'kasir' => 'is-ok', 'dapur' => 'is-warn']
                                         <i class="fa-solid fa-trash-can" aria-hidden="true"></i> Hapus
                                     </button>
                                 <?php else: ?>
-                                    <a href="<?= site_url('owner/hapus_user/' . $u['id']); ?>" class="btn btn-outline-danger btn-sm"
-                                       onclick="return confirm('Hapus akun ini?');">
-                                        <i class="fa-solid fa-trash-can" aria-hidden="true"></i> Hapus
-                                    </a>
+                                    <form action="<?= site_url('owner/hapus_user/' . $u['id']); ?>" method="POST" class="d-inline">
+                                        <input type="hidden"
+                                               name="<?= $this->security->get_csrf_token_name(); ?>"
+                                               value="<?= $this->security->get_csrf_hash(); ?>">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm"
+                                                onclick="return confirm('Hapus akun ini?');">
+                                            <i class="fa-solid fa-trash-can" aria-hidden="true"></i> Hapus
+                                        </button>
+                                    </form>
                                 <?php endif; ?>
                             </td>
                         </tr>
@@ -103,6 +108,9 @@ $kelas_role  = ['owner' => 'is-brand', 'kasir' => 'is-ok', 'dapur' => 'is-warn']
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <form action="<?= site_url('owner/edit_user/' . $u['id']); ?>" method="POST">
+                        <input type="hidden"
+                               name="<?= $this->security->get_csrf_token_name(); ?>"
+                               value="<?= $this->security->get_csrf_hash(); ?>">
                         <div class="modal-header">
                             <h5 class="modal-title" id="modalEditUserLabel<?= $u['id']; ?>">Ubah <?= html_escape($u['nama']); ?></h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
@@ -154,6 +162,9 @@ $kelas_role  = ['owner' => 'is-brand', 'kasir' => 'is-ok', 'dapur' => 'is-warn']
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form action="<?= site_url('owner/tambah_user'); ?>" method="POST">
+                <input type="hidden"
+                       name="<?= $this->security->get_csrf_token_name(); ?>"
+                       value="<?= $this->security->get_csrf_hash(); ?>">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalTambahUserLabel">Tambah pengguna baru</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>

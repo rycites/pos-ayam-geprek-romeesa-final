@@ -24,7 +24,7 @@ $inisial  = strtoupper(mb_substr($nama !== '' ? $nama : $username, 0, 1));
 
 $hari_ini = $ci->db
     ->select('COUNT(*) AS jumlah, COALESCE(SUM(total_bayar), 0) AS total')
-    ->where('status_bayar', 'Lunas')
+    ->where('LOWER(status_bayar)', 'lunas')
     ->where('DATE(tanggal) = CURDATE()', NULL, FALSE)
     ->get('transaksi')
     ->row();
@@ -260,15 +260,23 @@ $tanggal_ini = date('d') . ' ' . $nama_bulan[(int) date('n')] . ' ' . date('Y');
 
                         <li>
 
-                            <a class="dropdown-item text-danger"
-                                href="<?= site_url('auth/logout'); ?>">
+                            <form action="<?= site_url('auth/logout'); ?>" method="POST">
 
-                                <i class="fa-solid fa-right-from-bracket me-2"
-                                    aria-hidden="true"></i>
+                                <input type="hidden"
+                                    name="<?= $this->security->get_csrf_token_name(); ?>"
+                                    value="<?= $this->security->get_csrf_hash(); ?>">
 
-                                Keluar
+                                <button type="submit"
+                                    class="dropdown-item text-danger">
 
-                            </a>
+                                    <i class="fa-solid fa-right-from-bracket me-2"
+                                        aria-hidden="true"></i>
+
+                                    Keluar
+
+                                </button>
+
+                            </form>
 
                         </li>
 

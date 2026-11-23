@@ -159,23 +159,27 @@ $total_pesanan = (isset($pesanan) && is_array($pesanan))
 
                     <?php if ($status === 'pending' && $id_detail > 0): ?>
 
-                        <a
-                            href="<?= site_url('kitchen/mulai/' . $id_detail); ?>"
-                            class="btn btn-primary w-100"
-                        >
-                            <i class="fa-solid fa-fire me-2" aria-hidden="true"></i>
-                            Mulai Masak
-                        </a>
+                        <form action="<?= site_url('kitchen/mulai/' . $id_detail); ?>" method="POST">
+                            <input type="hidden"
+                                   name="<?= $this->security->get_csrf_token_name(); ?>"
+                                   value="<?= $this->security->get_csrf_hash(); ?>">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fa-solid fa-fire me-2" aria-hidden="true"></i>
+                                Mulai Masak
+                            </button>
+                        </form>
 
                     <?php elseif (($status === 'proses' || $status === 'diproses') && $id_detail > 0): ?>
 
-                        <a
-                            href="<?= site_url('kitchen/selesai/' . $id_detail); ?>"
-                            class="btn btn-success w-100"
-                        >
-                            <i class="fa-solid fa-circle-check me-2" aria-hidden="true"></i>
-                            Selesaikan Masakan
-                        </a>
+                        <form action="<?= site_url('kitchen/selesai/' . $id_detail); ?>" method="POST">
+                            <input type="hidden"
+                                   name="<?= $this->security->get_csrf_token_name(); ?>"
+                                   value="<?= $this->security->get_csrf_hash(); ?>">
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="fa-solid fa-circle-check me-2" aria-hidden="true"></i>
+                                Selesaikan Masakan
+                            </button>
+                        </form>
 
                     <?php elseif ($status === 'selesai'): ?>
 

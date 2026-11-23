@@ -9,7 +9,7 @@ class Owner extends CI_Controller {
         parent::__construct();
         $this->load->database();
         $this->load->library(['session']);
-        $this->load->helper(['url']);
+        $this->load->helper(['url', 'password']);
 
         if (!$this->session->userdata('logged_in') || $this->session->userdata('role') != 'owner') {
             $this->session->set_flashdata('msg', 'Akses ditolak! Khusus Owner.');
@@ -28,20 +28,14 @@ class Owner extends CI_Controller {
 
     // ================= FITUR LAPORAN =================
 
-    public function laporan()
-    {
-        $jenis   = $this->input->get('jenis', true);
-        $tanggal = $this->input->get('tanggal', true);
-        $bulan   = $this->input->get('bulan', true);
-        $metode  = $this->input->get('metode', true);
-
-        $tanggal_mulai   = $this->input->get('tanggal_mulai') ?: date('Y-m-01');
-        $tanggal_selesai = $this->input->get('tanggal_selesai') ?: date('Y-m-d');
-
-        $this->db->select('transaksi.*, users.nama as nama_kasir');
-        $this->db->from('transaksi');
-        $this->db->join('users', 'users.id = transaksi.id_kasir', 'left');
-
+    private function _terapkan_filter_laporan(
+        $jenis,
+        $tanggal,
+        $bulan,
+        $metode,
+        $tanggal_mulai,
+        $tanggal_selesai
+    ) {
         if ($jenis == 'harian' && !empty($tanggal)) {
             $this->db->where('DATE(transaksi.tanggal)', $tanggal);
         } elseif ($jenis == 'mingguan') {
@@ -59,7 +53,30 @@ class Owner extends CI_Controller {
         if (!empty($metode)) {
             $this->db->where('transaksi.metode_pembayaran', $metode);
         }
+    }
 
+    public function laporan()
+    {
+        $jenis   = $this->input->get('jenis', true);
+        $tanggal = $this->input->get('tanggal', true);
+        $bulan   = $this->input->get('bulan', true);
+        $metode  = $this->input->get('metode', true);
+
+        $tanggal_mulai   = $this->input->get('tanggal_mulai') ?: date('Y-m-01');
+        $tanggal_selesai = $this->input->get('tanggal_selesai') ?: date('Y-m-d');
+
+        $this->db->select('transaksi.*, users.nama as nama_kasir');
+        $this->db->from('transaksi');
+        $this->db->join('users', 'users.id = transaksi.id_kasir', 'left');
+        $this->_terapkan_filter_laporan(
+            $jenis,
+            $tanggal,
+            $bulan,
+            $metode,
+            $tanggal_mulai,
+            $tanggal_selesai
+        );
+        $this->db->where("LOWER(transaksi.status_bayar) = 'lunas'");
         $this->db->order_by('transaksi.tanggal', 'DESC');
 
         $result = $this->db->get()->result_array();
@@ -98,25 +115,15 @@ class Owner extends CI_Controller {
         $this->db->select('transaksi.*, users.nama as nama_kasir');
         $this->db->from('transaksi');
         $this->db->join('users', 'users.id = transaksi.id_kasir', 'left');
-
-        if ($jenis == 'harian' && !empty($tanggal)) {
-            $this->db->where('DATE(transaksi.tanggal)', $tanggal);
-        } elseif ($jenis == 'mingguan') {
-            $this->db->where(
-                'transaksi.tanggal >=',
-                date('Y-m-d 00:00:00', strtotime('-7 days'))
-            );
-        } elseif ($jenis == 'bulanan' && !empty($bulan)) {
-            $this->db->like('transaksi.tanggal', $bulan, 'after');
-        } else {
-            $this->db->where('DATE(transaksi.tanggal) >=', $tanggal_mulai);
-            $this->db->where('DATE(transaksi.tanggal) <=', $tanggal_selesai);
-        }
-
-        if (!empty($metode)) {
-            $this->db->where('transaksi.metode_pembayaran', $metode);
-        }
-
+        $this->_terapkan_filter_laporan(
+            $jenis,
+            $tanggal,
+            $bulan,
+            $metode,
+            $tanggal_mulai,
+            $tanggal_selesai
+        );
+        $this->db->where("LOWER(transaksi.status_bayar) = 'lunas'");
         $this->db->order_by('transaksi.tanggal', 'ASC');
 
         $data['laporan'] = $this->db->get()->result_array();
@@ -150,7 +157,7 @@ class Owner extends CI_Controller {
         $foto_aktif = '';
 
         if (file_exists($file_penanda)) {
-            $nama_file = trim(file_get_contents($file_penanda));
+            $nama_file = basename(trim(file_get_contents($file_penanda)));
 
             if (!empty($nama_file) && file_exists($folder . $nama_file)) {
                 $foto_aktif = $nama_file;
@@ -179,6 +186,11 @@ class Owner extends CI_Controller {
 
     public function upload_foto_login()
     {
+        if ($this->input->method() !== 'post') {
+            redirect('owner/pengaturan_login');
+            return;
+        }
+
         if (empty($_FILES['foto_login']['name'])) {
             $this->session->set_flashdata('error', 'Silakan pilih foto terlebih dahulu.');
             redirect('owner/pengaturan_login');
@@ -238,13 +250,13 @@ class Owner extends CI_Controller {
         $foto_lama = '';
 
         if (file_exists($file_penanda)) {
-            $foto_lama = trim(file_get_contents($file_penanda));
+            $foto_lama = basename(trim(file_get_contents($file_penanda)));
         }
 
         // Simpan nama foto aktif
         $hasil_simpan = file_put_contents(
             $file_penanda,
-            $nama_file_baru,
+            basename($nama_file_baru),
             LOCK_EX
         );
 
@@ -281,11 +293,16 @@ class Owner extends CI_Controller {
 
     public function hapus_foto_login()
     {
+        if ($this->input->method() !== 'post') {
+            redirect('owner/pengaturan_login');
+            return;
+        }
+
         $folder = FCPATH . 'uploads/foto_halaman_login/';
         $file_penanda = $folder . 'active.txt';
 
         if (file_exists($file_penanda)) {
-            $foto_aktif = trim(file_get_contents($file_penanda));
+            $foto_aktif = basename(trim(file_get_contents($file_penanda)));
 
             if (!empty($foto_aktif) && is_file($folder . $foto_aktif)) {
                 @unlink($folder . $foto_aktif);
@@ -307,7 +324,10 @@ class Owner extends CI_Controller {
 
     public function menu()
     {
-        $data['menu'] = $this->db->get('menu')->result_array();
+        $data['menu'] = $this->db
+            ->where('status', 'tersedia')
+            ->get('menu')
+            ->result_array();
 
         $data['title']      = 'Kelola Menu - Ayam Geprek Romeesa';
         $data['page_title'] = 'Manajemen Menu Restoran';
@@ -319,39 +339,50 @@ class Owner extends CI_Controller {
 
     public function tambah_menu()
     {
-        $upload_path = FCPATH . 'uploads/';
-
-        if (!is_dir($upload_path)) {
-            mkdir($upload_path, 0777, TRUE);
+        if ($this->input->method() !== 'post') {
+            redirect('owner/menu');
+            return;
         }
 
-        $data = [
-            'nama_menu' => $this->input->post('nama_menu', true),
-            'harga'     => $this->input->post('harga', true),
-            'kategori'  => $this->input->post('kategori', true),
-            'status'    => 'tersedia',
-            'foto'      => 'default.jpg'
-        ];
+        $data = $this->_data_menu_dari_post();
+
+        if ($data === NULL) {
+            $this->session->set_flashdata(
+                'error_upload',
+                'Data menu tidak valid. Periksa nama menu, kategori, dan harga.'
+            );
+            redirect('owner/menu');
+            return;
+        }
+
+        $data['status'] = 'tersedia';
+        $data['foto']   = NULL;
 
         if (!empty($_FILES['foto']['name'])) {
-            $config['upload_path']   = $upload_path;
-            $config['allowed_types'] = 'jpg|jpeg|png';
-            $config['max_size']      = 2048;
-            $config['encrypt_name']  = TRUE;
+            $hasil_upload = $this->_upload_foto_menu();
 
-            $this->load->library('upload', $config);
-            $this->upload->initialize($config);
-
-            if ($this->upload->do_upload('foto')) {
-                $uploadData = $this->upload->data();
-                $data['foto'] = $uploadData['file_name'];
-            } else {
-                $error = $this->upload->display_errors('', '');
-                $this->session->set_flashdata('error_upload', $error);
+            if ($hasil_upload['error'] !== NULL) {
+                $this->session->set_flashdata('error_upload', $hasil_upload['error']);
+                redirect('owner/menu');
+                return;
             }
+
+            $data['foto'] = $hasil_upload['foto'];
         }
 
-        $this->db->insert('menu', $data);
+        if (!$this->db->insert('menu', $data)) {
+            if (!empty($data['foto'])) {
+                @unlink(FCPATH . 'uploads/foto_menu/' . $data['foto']);
+            }
+
+            $this->session->set_flashdata(
+                'error_upload',
+                'Menu gagal disimpan ke database.'
+            );
+            redirect('owner/menu');
+            return;
+        }
+
         $this->session->set_flashdata(
             'success',
             'Menu baru beserta fotonya berhasil ditambahkan!'
@@ -363,45 +394,86 @@ class Owner extends CI_Controller {
 
     public function edit_menu($id)
     {
-        $upload_path = FCPATH . 'uploads/';
-
-        if (!is_dir($upload_path)) {
-            mkdir($upload_path, 0777, TRUE);
+        if ($this->input->method() !== 'post') {
+            redirect('owner/menu');
+            return;
         }
 
-        $data = [
-            'nama_menu' => $this->input->post('nama_menu', true),
-            'harga'     => $this->input->post('harga', true),
-            'kategori'  => $this->input->post('kategori', true)
-        ];
+        $menu_lama = $this->db->get_where('menu', ['id' => $id])->row_array();
+
+        if (empty($menu_lama)) {
+            $this->session->set_flashdata(
+                'error_upload',
+                'Menu yang ingin diubah tidak ditemukan.'
+            );
+            redirect('owner/menu');
+            return;
+        }
+
+        $data = $this->_data_menu_dari_post();
+
+        if ($data === NULL) {
+            $this->session->set_flashdata(
+                'error_upload',
+                'Data menu tidak valid. Periksa nama menu, kategori, dan harga.'
+            );
+            redirect('owner/menu');
+            return;
+        }
+
+        $foto_baru = NULL;
 
         if (!empty($_FILES['foto']['name'])) {
-            $config['upload_path']   = $upload_path;
-            $config['allowed_types'] = 'jpg|jpeg|png';
-            $config['max_size']      = 2048;
-            $config['encrypt_name']  = TRUE;
+            $hasil_upload = $this->_upload_foto_menu();
 
-            $this->load->library('upload', $config);
-            $this->upload->initialize($config);
-
-            if ($this->upload->do_upload('foto')) {
-                $menu_lama = $this->db->get_where('menu', ['id' => $id])->row_array();
-
-                if (
-                    !empty($menu_lama['foto']) &&
-                    file_exists($upload_path . $menu_lama['foto']) &&
-                    $menu_lama['foto'] != 'default.jpg'
-                ) {
-                    @unlink($upload_path . $menu_lama['foto']);
-                }
-
-                $uploadData = $this->upload->data();
-                $data['foto'] = $uploadData['file_name'];
+            if ($hasil_upload['error'] !== NULL) {
+                $this->session->set_flashdata('error_upload', $hasil_upload['error']);
+                redirect('owner/menu');
+                return;
             }
+
+            $foto_baru = $hasil_upload['foto'];
+            $data['foto'] = $foto_baru;
         }
 
         $this->db->where('id', $id);
-        $this->db->update('menu', $data);
+        $berhasil = $this->db->update('menu', $data);
+
+        if (!$berhasil) {
+            if ($foto_baru !== NULL) {
+                @unlink(FCPATH . 'uploads/foto_menu/' . $foto_baru);
+            }
+
+            $this->session->set_flashdata(
+                'error_upload',
+                'Menu gagal diperbarui di database.'
+            );
+            redirect('owner/menu');
+            return;
+        }
+
+        if ($foto_baru !== NULL) {
+            $foto_lama = !empty($menu_lama['foto'])
+                ? basename($menu_lama['foto'])
+                : '';
+
+            if (
+                $foto_lama !== '' &&
+                $foto_lama !== 'default.jpg' &&
+                $foto_lama !== $foto_baru
+            ) {
+                $dipakai_menu_lain = $this->db
+                    ->where('foto', $foto_lama)
+                    ->where('id !=', $id)
+                    ->count_all_results('menu');
+
+                $path_foto_lama = FCPATH . 'uploads/foto_menu/' . $foto_lama;
+
+                if ($dipakai_menu_lain === 0 && is_file($path_foto_lama)) {
+                    @unlink($path_foto_lama);
+                }
+            }
+        }
 
         $this->session->set_flashdata(
             'success',
@@ -414,26 +486,106 @@ class Owner extends CI_Controller {
 
     public function hapus_menu($id)
     {
-        $upload_path = FCPATH . 'uploads/';
+        if ($this->input->method() !== 'post') {
+            redirect('owner/menu');
+            return;
+        }
+
         $menu = $this->db->get_where('menu', ['id' => $id])->row_array();
 
-        if (
-            !empty($menu['foto']) &&
-            file_exists($upload_path . $menu['foto']) &&
-            $menu['foto'] != 'default.jpg'
-        ) {
-            @unlink($upload_path . $menu['foto']);
+        if (empty($menu)) {
+            $this->session->set_flashdata(
+                'error_upload',
+                'Menu yang ingin dihapus tidak ditemukan.'
+            );
+            redirect('owner/menu');
+            return;
         }
 
         $this->db->where('id', $id);
-        $this->db->delete('menu');
+        $this->db->update('menu', ['status' => 'habis']);
 
         $this->session->set_flashdata(
             'success',
-            'Menu berhasil dihapus!'
+            'Menu berhasil dihapus dari daftar.'
         );
 
         redirect('owner/menu');
+    }
+
+
+    private function _data_menu_dari_post()
+    {
+        $nama_menu = trim((string) $this->input->post('nama_menu', true));
+        $harga     = $this->input->post('harga', true);
+        $kategori  = $this->input->post('kategori', true);
+
+        $kategori_valid = ['makanan', 'minuman', 'topping'];
+
+        if (
+            $nama_menu === '' ||
+            !is_numeric($harga) ||
+            (float) $harga < 0 ||
+            !in_array($kategori, $kategori_valid, TRUE)
+        ) {
+            return NULL;
+        }
+
+        return [
+            'nama_menu' => $nama_menu,
+            'harga'     => (int) $harga,
+            'kategori'  => $kategori
+        ];
+    }
+
+
+    private function _upload_foto_menu()
+    {
+        $upload_path = FCPATH . 'uploads/foto_menu/';
+
+        if (!is_dir($upload_path)) {
+            @mkdir($upload_path, 0755, TRUE);
+        }
+
+        if (!is_dir($upload_path) || !is_writable($upload_path)) {
+            return [
+                'foto'  => NULL,
+                'error' => 'Folder foto menu tidak dapat ditulis.'
+            ];
+        }
+
+        $config = [
+            'upload_path'   => $upload_path,
+            'allowed_types' => 'jpg|jpeg|png',
+            'max_size'      => 2048,
+            'encrypt_name'  => TRUE
+        ];
+
+        $this->load->library('upload', $config);
+        $this->upload->initialize($config);
+
+        if (!$this->upload->do_upload('foto')) {
+            return [
+                'foto'  => NULL,
+                'error' => $this->upload->display_errors('', '')
+            ];
+        }
+
+        $upload_data = $this->upload->data();
+
+        if (!@getimagesize($upload_data['full_path'])) {
+            @unlink($upload_data['full_path']);
+
+            return [
+                'foto'  => NULL,
+                'error' => 'File yang diunggah bukan gambar yang valid.'
+            ];
+        }
+
+        return [
+            'foto'  => $upload_data['file_name'],
+            'error' => NULL
+        ];
     }
 
 
@@ -453,7 +605,35 @@ class Owner extends CI_Controller {
 
     public function tambah_user()
     {
-        $username = $this->input->post('username');
+        if ($this->input->method() !== 'post') {
+            redirect('owner/users');
+            return;
+        }
+
+        $nama     = trim((string) $this->input->post('nama', true));
+        $username = trim((string) $this->input->post('username', true));
+        $password = (string) $this->input->post('password');
+        $role     = $this->input->post('role');
+
+        $role_valid = ['owner', 'kasir', 'dapur'];
+
+        if (
+            $nama === '' ||
+            !preg_match('/^\S{3,50}$/', $username) ||
+            strlen($password) < 6 ||
+            !in_array($role, $role_valid, TRUE)
+        ) {
+            $this->session->set_flashdata(
+                'error',
+                'Data user tidak valid. Nama wajib diisi, username 3-50 karakter tanpa spasi, password minimal 6 karakter.'
+            );
+
+            $this->session->set_flashdata('old_input', $this->input->post());
+            $this->session->set_flashdata('modal_target', 'modalTambahUser');
+
+            redirect('owner/users');
+            return;
+        }
 
         $cek_username = $this->db->get_where(
             'users',
@@ -474,13 +654,20 @@ class Owner extends CI_Controller {
         }
 
         $data = [
-            'nama'     => $this->input->post('nama'),
+            'nama'     => $nama,
             'username' => $username,
-            'password' => md5($this->input->post('password')),
-            'role'     => $this->input->post('role')
+            'password' => romeosa_hash_password($password),
+            'role'     => $role
         ];
 
-        $this->db->insert('users', $data);
+        if (!$this->db->insert('users', $data)) {
+            $this->session->set_flashdata(
+                'error',
+                'User baru gagal disimpan ke database.'
+            );
+            redirect('owner/users');
+            return;
+        }
 
         $this->session->set_flashdata(
             'success',
@@ -493,7 +680,45 @@ class Owner extends CI_Controller {
 
     public function edit_user($id)
     {
-        $username = $this->input->post('username');
+        if ($this->input->method() !== 'post') {
+            redirect('owner/users');
+            return;
+        }
+
+        $user_lama = $this->db->get_where('users', ['id' => $id])->row_array();
+
+        if (empty($user_lama)) {
+            $this->session->set_flashdata(
+                'error',
+                'User yang ingin diubah tidak ditemukan.'
+            );
+            redirect('owner/users');
+            return;
+        }
+
+        $nama     = trim((string) $this->input->post('nama', true));
+        $username = trim((string) $this->input->post('username', true));
+        $password = (string) $this->input->post('password');
+        $role     = $this->input->post('role');
+
+        $role_valid = ['owner', 'kasir', 'dapur'];
+
+        if (
+            $nama === '' ||
+            !preg_match('/^\S{3,50}$/', $username) ||
+            ($password !== '' && strlen($password) < 6) ||
+            !in_array($role, $role_valid, TRUE)
+        ) {
+            $this->session->set_flashdata(
+                'error',
+                'Data user tidak valid. Nama wajib diisi, username 3-50 karakter tanpa spasi, password baru minimal 6 karakter.'
+            );
+
+            $this->session->set_flashdata('modal_target', 'modalEditUser' . $id);
+
+            redirect('owner/users');
+            return;
+        }
 
         $cek_username = $this->db
             ->where('username', $username)
@@ -517,17 +742,26 @@ class Owner extends CI_Controller {
         }
 
         $data = [
-            'nama'     => $this->input->post('nama'),
+            'nama'     => $nama,
             'username' => $username,
-            'role'     => $this->input->post('role')
+            'role'     => $role
         ];
 
-        if (!empty($this->input->post('password'))) {
-            $data['password'] = md5($this->input->post('password'));
+        if ($password !== '') {
+            $data['password'] = romeosa_hash_password($password);
         }
 
         $this->db->where('id', $id);
-        $this->db->update('users', $data);
+        $berhasil = $this->db->update('users', $data);
+
+        if (!$berhasil) {
+            $this->session->set_flashdata(
+                'error',
+                'Data user gagal diperbarui di database.'
+            );
+            redirect('owner/users');
+            return;
+        }
 
         $this->session->set_flashdata(
             'success',
@@ -540,12 +774,28 @@ class Owner extends CI_Controller {
 
     public function hapus_user($id)
     {
+        if ($this->input->method() !== 'post') {
+            redirect('owner/users');
+            return;
+        }
+
         if ($id == $this->session->userdata('id')) {
             $this->session->set_flashdata(
                 'error',
                 'Anda tidak dapat menghapus akun yang sedang digunakan saat ini!'
             );
 
+            redirect('owner/users');
+            return;
+        }
+
+        $user = $this->db->get_where('users', ['id' => $id])->row_array();
+
+        if (empty($user)) {
+            $this->session->set_flashdata(
+                'error',
+                'User yang ingin dihapus tidak ditemukan.'
+            );
             redirect('owner/users');
             return;
         }

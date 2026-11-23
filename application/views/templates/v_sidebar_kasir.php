@@ -10,11 +10,14 @@ $username = (string) $ci->session->userdata('username');
 $inisial  = strtoupper(mb_substr($nama !== '' ? $nama : $username, 0, 1));
 
 // Pesanan meja dari QR yang belum diproses kasir
-$jml_pending = $ci->db->where('id_kasir', 0)->where('status_bayar', 'Pending')->count_all_results('transaksi');
+$jml_pending = $ci->db
+    ->where('id_kasir', 0)
+    ->where('LOWER(status_bayar)', 'pending')
+    ->count_all_results('transaksi');
 
 $hari_ini = $ci->db
     ->select('COUNT(*) AS jumlah, COALESCE(SUM(total_bayar), 0) AS total')
-    ->where('status_bayar', 'Lunas')
+    ->where('LOWER(status_bayar)', 'lunas')
     ->where('DATE(tanggal) = CURDATE()', NULL, FALSE)
     ->get('transaksi')
     ->row();
@@ -105,9 +108,12 @@ $tanggal_ini = date('d') . ' ' . $nama_bulan[(int) date('n')] . ' ' . date('Y');
                         <li><span class="dropdown-item-text small text-muted">Masuk sebagai <strong><?= html_escape($username); ?></strong></span></li>
                         <li><hr class="dropdown-divider"></li>
                         <li>
-                            <a class="dropdown-item text-danger" href="<?= site_url('auth/logout'); ?>">
-                                <i class="fa-solid fa-right-from-bracket me-2" aria-hidden="true"></i> Keluar
-                            </a>
+                            <form action="<?= site_url('auth/logout'); ?>" method="POST">
+                                <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
+                                <button type="submit" class="dropdown-item text-danger">
+                                    <i class="fa-solid fa-right-from-bracket me-2" aria-hidden="true"></i> Keluar
+                                </button>
+                            </form>
                         </li>
                     </ul>
                 </div>
