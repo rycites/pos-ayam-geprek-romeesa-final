@@ -38,6 +38,12 @@ class Cashier extends CI_Controller {
             ->get_where('menu', ['status' => 'tersedia'])
             ->result_array();
 
+        $data['sambal_tersedia'] = $this->db
+            ->where('status', 'tersedia')
+            ->order_by('nama_sambal', 'ASC')
+            ->get('sambal')
+            ->result_array();
+
         $data['title']      = 'Kasir - Ayam Geprek Romeesa';
         $data['page_title'] = 'Point of Sales (POS) Kasir';
         $data['subview']    = 'v_cashier';
@@ -70,23 +76,41 @@ class Cashier extends CI_Controller {
             return;
         }
 
-        $cart = $this->session->userdata('cart') ?: [];
+        $pilihan = $this->_pilihan_dari_post($menu);
 
-        if (isset($cart[$id_menu])) {
+        if ($pilihan['error'] !== NULL) {
+            $this->session->set_flashdata('error', $pilihan['error']);
 
-            $cart[$id_menu]['qty']++;
+            redirect('cashier');
+            return;
+        }
 
-            $cart[$id_menu]['subtotal'] =
-                $cart[$id_menu]['qty'] * $cart[$id_menu]['harga'];
+        $cart  = $this->session->userdata('cart') ?: [];
+        $kunci = $this->_kunci_cart(
+            $menu['id'],
+            $pilihan['id_sambal'],
+            $pilihan['level_pedas']
+        );
+
+        if (isset($cart[$kunci])) {
+
+            $cart[$kunci]['qty']++;
+
+            $cart[$kunci]['subtotal'] =
+                $cart[$kunci]['qty'] * $cart[$kunci]['harga'];
 
         } else {
 
-            $cart[$id_menu] = [
-                'id'       => $menu['id'],
-                'nama_menu' => $menu['nama_menu'],
-                'harga'     => $menu['harga'],
-                'qty'      => 1,
-                'subtotal'  => $menu['harga']
+            $cart[$kunci] = [
+                'id'          => $menu['id'],
+                'nama_menu'   => $menu['nama_menu'],
+                'harga'       => $menu['harga'],
+                'qty'         => 1,
+                'subtotal'    => $menu['harga'],
+                'id_sambal'   => $pilihan['id_sambal'],
+                'nama_sambal' => $pilihan['nama_sambal'],
+                'level_pedas' => $pilihan['level_pedas'],
+                'cart_key'    => $kunci
             ];
         }
 
@@ -98,19 +122,36 @@ class Cashier extends CI_Controller {
     // =====================================================
     // HAPUS MENU DARI KERANJANG POS
     // =====================================================
-    public function remove_cart($id_menu)
+    public function remove_cart($id_menu = NULL)
     {
         if ($this->input->method() !== 'post') {
             redirect('cashier');
             return;
         }
 
-        $cart = $this->session->userdata('cart') ?: [];
+        $cart     = $this->session->userdata('cart') ?: [];
+        $cart_key = (string) $this->input->post('cart_key');
 
-        if (isset($cart[$id_menu])) {
-            unset($cart[$id_menu]);
+        if ($cart_key !== '' && isset($cart[$cart_key])) {
+
+            unset($cart[$cart_key]);
 
             $this->session->set_userdata('cart', $cart);
+
+        } elseif ($id_menu !== NULL) {
+
+            foreach ($cart as $kunci => $item) {
+                if (
+                    (string) $kunci === (string) $id_menu ||
+                    (string) ($item['id'] ?? '') === (string) $id_menu
+                ) {
+                    unset($cart[$kunci]);
+
+                    $this->session->set_userdata('cart', $cart);
+
+                    break;
+                }
+            }
         }
 
         redirect('cashier');
@@ -176,8 +217,10 @@ class Cashier extends CI_Controller {
         $cart        = [];
         $total_bayar = 0;
 
-        foreach ($cart_session as $id_menu => $item) {
-            $id_menu = (int) $id_menu;
+        foreach ($cart_session as $kunci_lama => $item) {
+            $id_menu = isset($item['id'])
+                ? (int) $item['id']
+                : (int) $kunci_lama;
             $qty     = isset($item['qty']) ? (int) $item['qty'] : 0;
 
             if ($id_menu <= 0 || $qty <= 0) {
@@ -205,16 +248,39 @@ class Cashier extends CI_Controller {
                 return;
             }
 
+            $pilihan = $this->_pilihan_dari_item($menu, $item);
+
+            if ($pilihan['error'] !== NULL) {
+                $this->session->set_flashdata('error', $pilihan['error']);
+
+                redirect('cashier');
+                return;
+            }
+
             $harga    = (float) $menu['harga'];
             $subtotal = $harga * $qty;
+            $kunci    = $this->_kunci_cart(
+                $menu['id'],
+                $pilihan['id_sambal'],
+                $pilihan['level_pedas']
+            );
 
-            $cart[$id_menu] = [
-                'id'        => $menu['id'],
-                'nama_menu' => $menu['nama_menu'],
-                'harga'     => $harga,
-                'qty'       => $qty,
-                'subtotal'  => $subtotal
-            ];
+            if (isset($cart[$kunci])) {
+                $cart[$kunci]['qty'] += $qty;
+                $cart[$kunci]['subtotal'] += $subtotal;
+            } else {
+                $cart[$kunci] = [
+                    'id'          => $menu['id'],
+                    'nama_menu'   => $menu['nama_menu'],
+                    'harga'       => $harga,
+                    'qty'         => $qty,
+                    'subtotal'    => $subtotal,
+                    'id_sambal'   => $pilihan['id_sambal'],
+                    'nama_sambal' => $pilihan['nama_sambal'],
+                    'level_pedas' => $pilihan['level_pedas'],
+                    'cart_key'    => $kunci
+                ];
+            }
 
             $total_bayar += $subtotal;
         }
@@ -328,6 +394,9 @@ class Cashier extends CI_Controller {
             $data_detail = [
                 'id_transaksi' => $id_transaksi,
                 'id_menu'       => $item['id'],
+                'id_sambal'     => $item['id_sambal'],
+                'nama_sambal'   => $item['nama_sambal'],
+                'level_pedas'   => $item['level_pedas'],
                 'jumlah'        => $item['qty'],
                 'subtotal'      => $item['subtotal'],
                 'status'        => 'pending'
@@ -381,12 +450,29 @@ class Cashier extends CI_Controller {
             ->get('transaksi')
             ->result_array();
 
-        $data['title']      = 'Antrean Meja QR - Ayam Geprek Romeesa';
-        $data['page_title'] = 'Konfirmasi Antrean Pesanan Meja';
-        $data['subview']    = 'v_cashier_antrean';
-        $data['refresh']    = 10;
+        $data['title']         = 'Antrean Meja QR - Ayam Geprek Romeesa';
+        $data['page_title']    = 'Konfirmasi Antrean Pesanan Meja';
+        $data['subview']       = 'v_cashier_antrean';
+        $data['refresh_detik'] = 3;
 
         $this->load->view('templates/v_sidebar_kasir', $data);
+    }
+
+    // =====================================================
+    // JUMLAH ANTREAN MEJA UNTUK BADGE SIDEBAR
+    // =====================================================
+    public function jumlah_antrean()
+    {
+        $jumlah = $this->db
+            ->where('id_kasir', 0)
+            ->where('LOWER(status_bayar)', 'pending')
+            ->count_all_results('transaksi');
+
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode([
+                'jumlah' => (int) $jumlah
+            ]));
     }
 
     // =====================================================
@@ -670,6 +756,115 @@ class Cashier extends CI_Controller {
         }
 
         $this->load->view('v_struk', $data);
+    }
+
+    private function _kunci_cart($id_menu, $id_sambal, $level_pedas)
+    {
+        return (int) $id_menu . ':' . (int) $id_sambal . ':' . (int) $level_pedas;
+    }
+
+    private function _pilihan_dari_post($menu)
+    {
+        $hasil = [
+            'id_sambal'   => NULL,
+            'nama_sambal' => NULL,
+            'level_pedas' => NULL,
+            'error'       => NULL
+        ];
+
+        if ((int) ($menu['pakai_sambal'] ?? 0) === 1) {
+            $id_sambal = (int) $this->input->post('id_sambal');
+
+            if ($id_sambal <= 0) {
+                $hasil['error'] = 'Pilih sambal terlebih dahulu sebelum menambahkan menu.';
+
+                return $hasil;
+            }
+
+            $sambal = $this->db->get_where('sambal', [
+                'id'     => $id_sambal,
+                'status' => 'tersedia'
+            ])->row_array();
+
+            if (!$sambal) {
+                $hasil['error'] = 'Sambal yang dipilih sudah tidak tersedia.';
+
+                return $hasil;
+            }
+
+            $hasil['id_sambal']   = (int) $sambal['id'];
+            $hasil['nama_sambal'] = $sambal['nama_sambal'];
+        }
+
+        if ((int) ($menu['pakai_level'] ?? 0) === 1) {
+            $level = (int) $this->input->post('level_pedas');
+
+            if ($level < 1 || $level > 6) {
+                $hasil['error'] = 'Pilih level pedas 1 sampai 6 sebelum menambahkan menu.';
+
+                return $hasil;
+            }
+
+            $hasil['level_pedas'] = $level;
+        }
+
+        return $hasil;
+    }
+
+    private function _pilihan_dari_item($menu, $item)
+    {
+        $hasil = [
+            'id_sambal'   => NULL,
+            'nama_sambal' => NULL,
+            'level_pedas' => NULL,
+            'error'       => NULL
+        ];
+
+        $id_sambal = isset($item['id_sambal']) ? (int) $item['id_sambal'] : 0;
+
+        if ((int) ($menu['pakai_sambal'] ?? 0) === 1) {
+            if ($id_sambal <= 0) {
+                $hasil['error'] = 'Salah satu menu sekarang membutuhkan pilihan sambal. Hapus lalu tambahkan ulang menu tersebut.';
+
+                return $hasil;
+            }
+
+            $sambal = $this->db->get_where('sambal', [
+                'id'     => $id_sambal,
+                'status' => 'tersedia'
+            ])->row_array();
+
+            if (!$sambal) {
+                $hasil['error'] = 'Sambal pada salah satu menu sudah tidak tersedia. Hapus lalu tambahkan ulang menu tersebut.';
+
+                return $hasil;
+            }
+
+            $hasil['id_sambal']   = (int) $sambal['id'];
+            $hasil['nama_sambal'] = $sambal['nama_sambal'];
+        } elseif ($id_sambal > 0) {
+            $hasil['error'] = 'Pilihan sambal pada salah satu menu sudah tidak digunakan. Hapus lalu tambahkan ulang menu tersebut.';
+
+            return $hasil;
+        }
+
+        $level = isset($item['level_pedas']) ? (int) $item['level_pedas'] : 0;
+
+        if ((int) ($menu['pakai_level'] ?? 0) === 1) {
+            if ($level < 1 || $level > 6) {
+                $hasil['error'] = 'Salah satu menu sekarang membutuhkan level pedas 1 sampai 6. Hapus lalu tambahkan ulang menu tersebut.';
+
+                return $hasil;
+            }
+
+            $hasil['level_pedas'] = $level;
+        } elseif ($level > 0) {
+            $hasil['error'] = 'Pilihan level pedas pada salah satu menu sudah tidak digunakan. Hapus lalu tambahkan ulang menu tersebut.';
+
+            return $hasil;
+        }
+
+        return $hasil;
     }
 
     // =====================================================

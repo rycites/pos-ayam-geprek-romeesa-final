@@ -161,6 +161,10 @@ if ($role === 'kasir') {
                     $harga = (float) ($item['harga'] ?? 0);
                     $jumlah = (int) ($item['jumlah'] ?? 0);
                     $subtotal = (float) ($item['subtotal'] ?? ($harga * $jumlah));
+                    $nama_sambal = trim((string) ($item['nama_sambal'] ?? ''));
+                    $level_pedas = isset($item['level_pedas'])
+                        ? (int) $item['level_pedas']
+                        : 0;
                     ?>
 
                     <tr>
@@ -171,6 +175,23 @@ if ($role === 'kasir') {
                             <span class="text-muted" style="font-size: 11px;">
                                 @ Rp <?= number_format($harga, 0, ',', '.'); ?>
                             </span>
+
+                            <?php if ($nama_sambal !== '' || $level_pedas > 0): ?>
+                                <br>
+                                <span class="text-muted" style="font-size: 11px;">
+                                    <?php if ($nama_sambal !== ''): ?>
+                                        Sambal: <?= html_escape($nama_sambal); ?>
+                                    <?php endif; ?>
+
+                                    <?php if ($nama_sambal !== '' && $level_pedas > 0): ?>
+                                        &middot;
+                                    <?php endif; ?>
+
+                                    <?php if ($level_pedas > 0): ?>
+                                        Level <?= $level_pedas; ?>
+                                    <?php endif; ?>
+                                </span>
+                            <?php endif; ?>
                         </td>
 
                         <td class="text-center align-middle num">

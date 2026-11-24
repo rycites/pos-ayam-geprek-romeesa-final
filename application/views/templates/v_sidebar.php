@@ -6,7 +6,7 @@ $ci     =& get_instance();
 $segmen = $ci->uri->segment(2);
 
 // Menentukan menu aktif
-if ($segmen === 'menu') {
+if ($segmen === 'menu' || $segmen === 'sambal') {
     $aktif = 'menu';
 } elseif ($segmen === 'users') {
     $aktif = 'users';

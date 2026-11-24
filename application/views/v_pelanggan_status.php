@@ -208,6 +208,12 @@ $label_status = [
 
                         $nama_menu = $item['nama_menu'] ?? 'Menu';
 
+                        $nama_sambal = trim((string) ($item['nama_sambal'] ?? ''));
+
+                        $level_pedas = isset($item['level_pedas'])
+                            ? (int) $item['level_pedas']
+                            : 0;
+
                         $jumlah = isset($item['jumlah'])
                             ? (int) $item['jumlah']
                             : 0;
@@ -220,6 +226,22 @@ $label_status = [
                                 <div class="row-title">
                                     <?= html_escape($nama_menu); ?>
                                 </div>
+
+                                <?php if ($nama_sambal !== '' || $level_pedas > 0): ?>
+                                    <div class="row-sub">
+                                        <?php if ($nama_sambal !== ''): ?>
+                                            Sambal: <?= html_escape($nama_sambal); ?>
+                                        <?php endif; ?>
+
+                                        <?php if ($nama_sambal !== '' && $level_pedas > 0): ?>
+                                            &middot;
+                                        <?php endif; ?>
+
+                                        <?php if ($level_pedas > 0): ?>
+                                            Level <?= $level_pedas; ?>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endif; ?>
 
                                 <div class="row-sub">
                                     Jumlah: <?= $jumlah; ?>

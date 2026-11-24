@@ -15,6 +15,8 @@ $protokol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
     : 'http://';
 
 $url_foto_owner = $protokol . $host_aktif . '/ayam-geprek-romeesa-final/uploads/foto_menu/';
+
+$jumlah_sambal = isset($jumlah_sambal) ? (int) $jumlah_sambal : 0;
 ?>
 
 <?php if ($this->session->flashdata('success')): ?>
@@ -39,9 +41,15 @@ $url_foto_owner = $protokol . $host_aktif . '/ayam-geprek-romeesa-final/uploads/
         <p>Menu berstatus tersedia yang muncul di halaman kasir dan pesanan pelanggan.</p>
     </div>
 
-    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambah">
-        <i class="fa-solid fa-plus me-1" aria-hidden="true"></i> Tambah menu
-    </button>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="<?= site_url('owner/sambal'); ?>" class="btn btn-light">
+            <i class="fa-solid fa-pepper-hot me-1" aria-hidden="true"></i> Kelola sambal
+        </a>
+
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambah">
+            <i class="fa-solid fa-plus me-1" aria-hidden="true"></i> Tambah menu
+        </button>
+    </div>
 </div>
 
 <div class="card overflow-hidden">
@@ -189,6 +197,7 @@ $url_foto_owner = $protokol . $host_aktif . '/ayam-geprek-romeesa-final/uploads/
                                     id="kategori_<?= $m['id']; ?>"
                                     name="kategori"
                                     class="form-select"
+                                    data-kategori-menu
                                     required
                                 >
                                     <?php foreach ($daftar_kategori as $nilai => $label): ?>
@@ -200,6 +209,47 @@ $url_foto_owner = $protokol . $host_aktif . '/ayam-geprek-romeesa-final/uploads/
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
+                            </div>
+
+                            <div class="mb-3" data-opsi-makanan>
+                                <label class="form-label d-block">Pilihan untuk menu makanan</label>
+
+                                <div class="form-check">
+                                    <input
+                                        class="form-check-input"
+                                        type="checkbox"
+                                        name="pakai_sambal"
+                                        value="1"
+                                        id="pakai_sambal_<?= $m['id']; ?>"
+                                        <?= !empty($m['pakai_sambal']) ? 'checked' : ''; ?>
+                                    >
+                                    <label class="form-check-label" for="pakai_sambal_<?= $m['id']; ?>">
+                                        Sediakan pilihan sambal
+                                    </label>
+                                </div>
+
+                                <div class="form-check">
+                                    <input
+                                        class="form-check-input"
+                                        type="checkbox"
+                                        name="pakai_level"
+                                        value="1"
+                                        id="pakai_level_<?= $m['id']; ?>"
+                                        <?= !empty($m['pakai_level']) ? 'checked' : ''; ?>
+                                    >
+                                    <label class="form-check-label" for="pakai_level_<?= $m['id']; ?>">
+                                        Minta level pedas 1 sampai 6
+                                    </label>
+                                </div>
+
+                                <p class="text-muted small mb-0 mt-1">
+                                    <?php if ($jumlah_sambal > 0): ?>
+                                        Pelanggan memilih dari daftar sambal yang tersedia.
+                                    <?php else: ?>
+                                        Belum ada sambal tersedia.
+                                        <a href="<?= site_url('owner/sambal'); ?>">Tambahkan di Kelola Sambal</a>.
+                                    <?php endif; ?>
+                                </p>
                             </div>
 
                             <div class="mb-3">
@@ -281,12 +331,52 @@ $url_foto_owner = $protokol . $host_aktif . '/ayam-geprek-romeesa-final/uploads/
                             id="kategori_baru"
                             name="kategori"
                             class="form-select"
+                            data-kategori-menu
                             required
                         >
                             <?php foreach ($daftar_kategori as $nilai => $label): ?>
                                 <option value="<?= $nilai; ?>"><?= $label; ?></option>
                             <?php endforeach; ?>
                         </select>
+                    </div>
+
+                    <div class="mb-3" data-opsi-makanan>
+                        <label class="form-label d-block">Pilihan untuk menu makanan</label>
+
+                        <div class="form-check">
+                            <input
+                                class="form-check-input"
+                                type="checkbox"
+                                name="pakai_sambal"
+                                value="1"
+                                id="pakai_sambal_baru"
+                            >
+                            <label class="form-check-label" for="pakai_sambal_baru">
+                                Sediakan pilihan sambal
+                            </label>
+                        </div>
+
+                        <div class="form-check">
+                            <input
+                                class="form-check-input"
+                                type="checkbox"
+                                name="pakai_level"
+                                value="1"
+                                id="pakai_level_baru"
+                            >
+                            <label class="form-check-label" for="pakai_level_baru">
+                                Minta level pedas 1 sampai 6
+                            </label>
+                        </div>
+
+                        <p class="text-muted small mb-0 mt-1">
+                            <?php if ($jumlah_sambal > 0): ?>
+                                Pelanggan memilih dari daftar sambal yang tersedia.
+                            <?php else: ?>
+                                Belum ada sambal tersedia.
+                                <a href="<?= site_url('owner/sambal'); ?>">Tambahkan di Kelola Sambal</a>.
+                            <?php endif; ?>
+                        </p>
                     </div>
 
                     <div class="mb-3">
@@ -326,3 +416,21 @@ $url_foto_owner = $protokol . $host_aktif . '/ayam-geprek-romeesa-final/uploads/
         </div>
     </div>
 </div>
+
+<script>
+(function () {
+    document.querySelectorAll('[data-kategori-menu]').forEach(function (pilih) {
+        var form = pilih.closest('form');
+        var opsi = form ? form.querySelector('[data-opsi-makanan]') : null;
+
+        if (!opsi) return;
+
+        function sinkron() {
+            opsi.hidden = pilih.value !== 'makanan';
+        }
+
+        pilih.addEventListener('change', sinkron);
+        sinkron();
+    });
+})();
+</script>

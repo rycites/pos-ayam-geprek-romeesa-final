@@ -1,6 +1,10 @@
 
 <?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
 
+<?php
+$detik_refresh = !empty($refresh_detik) ? max(1, (int) $refresh_detik) : 3;
+?>
+
 <?php if ($this->session->flashdata('success')): ?>
     <div class="alert alert-success mb-3" role="alert">
         <i class="fa-solid fa-circle-check me-1" aria-hidden="true"></i>
@@ -28,7 +32,7 @@
 
     <span class="badge-soft is-warn">
         <i class="fa-solid fa-rotate me-1" aria-hidden="true"></i>
-        Diperbarui tiap 10 detik
+        Diperbarui tiap <?= $detik_refresh; ?> detik
     </span>
 </div>
 
@@ -240,4 +244,48 @@ function konfirmasiPembayaran(form) {
 
     return true;
 }
+</script>
+
+<!-- Muat ulang antrean berkala, tetapi tunda saat kasir sedang mengisi nominal. -->
+<script>
+(function () {
+    var detik = <?= (int) $detik_refresh; ?>;
+
+    function sedangMengisi() {
+        var aktif = document.activeElement;
+
+        if (
+            aktif &&
+            (aktif.tagName === 'INPUT' ||
+                aktif.tagName === 'SELECT' ||
+                aktif.tagName === 'TEXTAREA') &&
+            aktif.type !== 'hidden'
+        ) {
+            return true;
+        }
+
+        var inputUang = document.querySelectorAll('input[name="uang_bayar"]');
+
+        for (var i = 0; i < inputUang.length; i++) {
+            if (inputUang[i].value !== '') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    function muatUlang() {
+        window.setTimeout(function () {
+            if (sedangMengisi()) {
+                muatUlang();
+                return;
+            }
+
+            window.location.reload();
+        }, detik * 1000);
+    }
+
+    muatUlang();
+})();
 </script>

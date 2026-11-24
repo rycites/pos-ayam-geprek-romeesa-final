@@ -4,6 +4,10 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 $cart = isset($cart) && is_array($cart) ? $cart : [];
 
+$sambal_tersedia = isset($sambal_tersedia) && is_array($sambal_tersedia)
+    ? $sambal_tersedia
+    : [];
+
 // Samakan nama nomor meja dengan data dari controller
 $no_meja = isset($nomor_meja) ? $nomor_meja : (isset($no_meja) ? $no_meja : 1);
 
@@ -136,6 +140,11 @@ $folder_foto_menu = 'uploads/foto_menu/';
                 <?php
                 $habis = isset($m['status']) && $m['status'] === 'habis';
 
+                $pakai_sambal = !empty($m['pakai_sambal']);
+                $pakai_level  = !empty($m['pakai_level']);
+                $punya_opsi   = $pakai_sambal || $pakai_level;
+                $sambal_kosong = $pakai_sambal && empty($sambal_tersedia);
+
                 // Mendukung nama kolom foto yang berbeda
                 $nama_foto = !empty($m['gambar'])
                     ? $m['gambar']
@@ -180,6 +189,23 @@ $folder_foto_menu = 'uploads/foto_menu/';
                             <?php if ($habis): ?>
                                 <button type="button" class="dish-add" disabled>
                                     <i class="fa-solid fa-ban"></i>
+                                </button>
+                            <?php elseif ($sambal_kosong): ?>
+                                <button type="button"
+                                        class="dish-add"
+                                        disabled
+                                        title="Sambal belum tersedia"
+                                        aria-label="Sambal belum tersedia untuk <?= html_escape($m['nama_menu']); ?>">
+                                    <i class="fa-solid fa-ban"></i>
+                                </button>
+                            <?php elseif ($punya_opsi): ?>
+                                <button type="button"
+                                        class="dish-add"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#opsiPelanggan<?= (int) $m['id']; ?>"
+                                        aria-label="Pilih sambal atau level untuk <?= html_escape($m['nama_menu']); ?>"
+                                        title="Pilih sambal / level">
+                                    <i class="fa-solid fa-plus"></i>
                                 </button>
                             <?php else: ?>
                                 <form action="<?= site_url('pelanggan/add_cart/' . $m['id'] . '/' . $no_meja); ?>"
@@ -232,6 +258,104 @@ $folder_foto_menu = 'uploads/foto_menu/';
 
 </div>
 
+<!-- MODAL PILIHAN SAMBAL DAN LEVEL PEDAS -->
+<?php if (!empty($menu)): ?>
+
+    <?php foreach ($menu as $m): ?>
+
+        <?php
+        $id_menu_opsi = (int) ($m['id'] ?? 0);
+        $pakai_sambal_opsi = !empty($m['pakai_sambal']);
+        $pakai_level_opsi  = !empty($m['pakai_level']);
+        $sambal_kosong_opsi = $pakai_sambal_opsi && empty($sambal_tersedia);
+        ?>
+
+        <?php if (
+            $id_menu_opsi > 0 &&
+            ($pakai_sambal_opsi || $pakai_level_opsi) &&
+            !$sambal_kosong_opsi
+        ): ?>
+
+            <div class="modal fade"
+                 id="opsiPelanggan<?= $id_menu_opsi; ?>"
+                 tabindex="-1"
+                 aria-labelledby="opsiPelangganLabel<?= $id_menu_opsi; ?>"
+                 aria-hidden="true">
+
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+
+                        <form action="<?= site_url('pelanggan/add_cart/' . $id_menu_opsi . '/' . $no_meja); ?>"
+                              method="POST">
+
+                            <input type="hidden"
+                                   name="<?= $this->security->get_csrf_token_name(); ?>"
+                                   value="<?= $this->security->get_csrf_hash(); ?>">
+
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="opsiPelangganLabel<?= $id_menu_opsi; ?>">
+                                    Pilihan <?= html_escape($m['nama_menu']); ?>
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                            </div>
+
+                            <div class="modal-body">
+                                <?php if ($pakai_sambal_opsi): ?>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="sambal_pelanggan_<?= $id_menu_opsi; ?>">
+                                            Sambal
+                                        </label>
+                                        <select id="sambal_pelanggan_<?= $id_menu_opsi; ?>"
+                                                name="id_sambal"
+                                                class="form-select"
+                                                required>
+                                            <option value="">Pilih sambal</option>
+                                            <?php foreach ($sambal_tersedia as $s): ?>
+                                                <option value="<?= (int) $s['id']; ?>">
+                                                    <?= html_escape($s['nama_sambal']); ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                <?php endif; ?>
+
+                                <?php if ($pakai_level_opsi): ?>
+                                    <div class="mb-0">
+                                        <label class="form-label" for="level_pelanggan_<?= $id_menu_opsi; ?>">
+                                            Level pedas
+                                        </label>
+                                        <select id="level_pelanggan_<?= $id_menu_opsi; ?>"
+                                                name="level_pedas"
+                                                class="form-select"
+                                                required>
+                                            <option value="">Pilih level</option>
+                                            <?php for ($level = 1; $level <= 6; $level++): ?>
+                                                <option value="<?= $level; ?>">Level <?= $level; ?></option>
+                                            <?php endfor; ?>
+                                        </select>
+                                        <p class="text-muted small mb-0 mt-1">
+                                            Level pedas tidak menambah biaya.
+                                        </p>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                                <button type="submit" class="btn btn-primary">Tambah ke keranjang</button>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+
+        <?php endif; ?>
+
+    <?php endforeach; ?>
+
+<?php endif; ?>
+
 <!-- FLOATING CART -->
 <?php if ($total_qty > 0): ?>
 
@@ -281,12 +405,16 @@ $folder_foto_menu = 'uploads/foto_menu/';
 
             <div class="mb-3">
 
-                <?php foreach ($cart as $item): ?>
+                <?php foreach ($cart as $cart_key => $item): ?>
 
                     <?php
-                    // Sesuaikan key dengan controller
-                    $id_menu = isset($item['id_menu']) ? $item['id_menu'] : 0;
                     $jumlah  = isset($item['jumlah']) ? (int)$item['jumlah'] : 0;
+
+                    $nama_sambal_cart = trim((string) ($item['nama_sambal'] ?? ''));
+
+                    $level_pedas_cart = isset($item['level_pedas'])
+                        ? (int) $item['level_pedas']
+                        : 0;
                     ?>
 
                     <div class="cart-line">
@@ -300,6 +428,24 @@ $folder_foto_menu = 'uploads/foto_menu/';
                                 <?= $jumlah; ?>x @ Rp
                                 <?= number_format($item['harga'], 0, ',', '.'); ?>
                             </div>
+
+                            <?php if ($nama_sambal_cart !== '' || $level_pedas_cart > 0): ?>
+
+                                <div class="line-price">
+                                    <?php if ($nama_sambal_cart !== ''): ?>
+                                        Sambal: <?= html_escape($nama_sambal_cart); ?>
+                                    <?php endif; ?>
+
+                                    <?php if ($nama_sambal_cart !== '' && $level_pedas_cart > 0): ?>
+                                        &middot;
+                                    <?php endif; ?>
+
+                                    <?php if ($level_pedas_cart > 0): ?>
+                                        Level <?= $level_pedas_cart; ?>
+                                    <?php endif; ?>
+                                </div>
+
+                            <?php endif; ?>
                         </div>
 
                         <div class="text-end">
@@ -307,12 +453,15 @@ $folder_foto_menu = 'uploads/foto_menu/';
                                 Rp <?= number_format($item['subtotal'], 0, ',', '.'); ?>
                             </div>
 
-                            <form action="<?= site_url('pelanggan/remove_cart/' . $id_menu . '/' . $no_meja); ?>"
+                            <form action="<?= site_url('pelanggan/remove_cart/' . $no_meja); ?>"
                                   method="POST"
                                   class="d-inline">
                                 <input type="hidden"
                                        name="<?= $this->security->get_csrf_token_name(); ?>"
                                        value="<?= $this->security->get_csrf_hash(); ?>">
+                                <input type="hidden"
+                                       name="cart_key"
+                                       value="<?= html_escape((string) $cart_key); ?>">
                                 <button type="submit"
                                         class="small text-danger border-0 bg-transparent p-0">
                                     <i class="fa-solid fa-trash-can me-1"></i>
@@ -367,25 +516,25 @@ $folder_foto_menu = 'uploads/foto_menu/';
                 </div>
 
                 <!-- QRIS -->
-                <div class="mb-3 text-center p-3"
+                <div class="qris-panel mb-3"
                      data-qris-box
-                     hidden
-                     style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);">
+                     hidden>
 
-                    <p class="fw-bold small mb-2">
-                        <i class="fa-solid fa-qrcode me-1"></i>
-                        Scan QRIS berikut
+                    <p class="qris-title mb-2">
+                        <i class="fa-solid fa-qrcode me-1" aria-hidden="true"></i>
+                        Scan QRIS warung
                     </p>
 
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&amp;data=AYAM-GEPREK-ROMEESA-MEJA-<?= urlencode($no_meja); ?>"
-                         alt="QRIS meja <?= html_escape($no_meja); ?>"
-                         width="150"
-                         height="150"
-                         class="rounded-3 bg-white p-2 border">
+                    <div class="qris-frame">
+                        <img src="<?= base_url('assets/images/qris-warung.png'); ?>"
+                             alt="QRIS warung Ayam Geprek Romeesa"
+                             width="878"
+                             height="1200">
+                    </div>
 
-                    <small class="text-muted d-block mt-2">
-                        Pembayaran melalui QRIS atau m-banking.
-                    </small>
+                    <p class="qris-help">
+                        Buka aplikasi pembayaran atau m-banking, lalu pindai kode QRIS di atas. Setelah membayar, tunjukkan bukti pembayaran ke kasir.
+                    </p>
                 </div>
 
                 <button type="submit" class="btn btn-primary btn-lg w-100">

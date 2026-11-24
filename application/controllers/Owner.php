@@ -329,6 +329,10 @@ class Owner extends CI_Controller {
             ->get('menu')
             ->result_array();
 
+        $data['jumlah_sambal'] = $this->db
+            ->where('status', 'tersedia')
+            ->count_all_results('sambal');
+
         $data['title']      = 'Kelola Menu - Ayam Geprek Romeesa';
         $data['page_title'] = 'Manajemen Menu Restoran';
         $data['subview']    = 'v_owner_menu';
@@ -514,6 +518,188 @@ class Owner extends CI_Controller {
     }
 
 
+    // ================= CRUD SAMBAL =================
+
+    public function sambal()
+    {
+        $data['sambal'] = $this->db
+            ->where('status', 'tersedia')
+            ->order_by('nama_sambal', 'ASC')
+            ->get('sambal')
+            ->result_array();
+
+        $data['title']      = 'Kelola Sambal - Ayam Geprek Romeesa';
+        $data['page_title'] = 'Kelola Jenis Sambal';
+        $data['subview']    = 'v_owner_sambal';
+
+        $this->load->view('templates/v_sidebar', $data);
+    }
+
+
+    public function tambah_sambal()
+    {
+        if ($this->input->method() !== 'post') {
+            redirect('owner/sambal');
+            return;
+        }
+
+        $nama_sambal = trim((string) $this->input->post('nama_sambal', true));
+
+        if ($nama_sambal === '' || strlen($nama_sambal) > 100) {
+            $this->session->set_flashdata(
+                'error',
+                'Nama sambal wajib diisi, maksimal 100 karakter.'
+            );
+
+            redirect('owner/sambal');
+            return;
+        }
+
+        $duplikat = $this->db->get_where('sambal', [
+            'nama_sambal' => $nama_sambal,
+            'status'      => 'tersedia'
+        ])->row_array();
+
+        if ($duplikat) {
+            $this->session->set_flashdata(
+                'error',
+                'Nama sambal tersebut sudah ada.'
+            );
+
+            redirect('owner/sambal');
+            return;
+        }
+
+        if (!$this->db->insert('sambal', [
+            'nama_sambal' => $nama_sambal,
+            'status'      => 'tersedia'
+        ])) {
+            $this->session->set_flashdata(
+                'error',
+                'Sambal gagal disimpan ke database.'
+            );
+
+            redirect('owner/sambal');
+            return;
+        }
+
+        $this->session->set_flashdata(
+            'success',
+            'Sambal baru berhasil ditambahkan.'
+        );
+
+        redirect('owner/sambal');
+    }
+
+
+    public function edit_sambal($id)
+    {
+        if ($this->input->method() !== 'post') {
+            redirect('owner/sambal');
+            return;
+        }
+
+        $sambal = $this->db->get_where('sambal', [
+            'id'     => $id,
+            'status' => 'tersedia'
+        ])->row_array();
+
+        if (empty($sambal)) {
+            $this->session->set_flashdata(
+                'error',
+                'Sambal yang ingin diubah tidak ditemukan.'
+            );
+
+            redirect('owner/sambal');
+            return;
+        }
+
+        $nama_sambal = trim((string) $this->input->post('nama_sambal', true));
+
+        if ($nama_sambal === '' || strlen($nama_sambal) > 100) {
+            $this->session->set_flashdata(
+                'error',
+                'Nama sambal wajib diisi, maksimal 100 karakter.'
+            );
+
+            redirect('owner/sambal');
+            return;
+        }
+
+        $duplikat = $this->db
+            ->where('nama_sambal', $nama_sambal)
+            ->where('status', 'tersedia')
+            ->where('id !=', $id)
+            ->get('sambal')
+            ->row_array();
+
+        if ($duplikat) {
+            $this->session->set_flashdata(
+                'error',
+                'Nama sambal tersebut sudah ada.'
+            );
+
+            redirect('owner/sambal');
+            return;
+        }
+
+        $this->db->where('id', $id);
+        $berhasil = $this->db->update('sambal', [
+            'nama_sambal' => $nama_sambal
+        ]);
+
+        if (!$berhasil) {
+            $this->session->set_flashdata(
+                'error',
+                'Sambal gagal diperbarui di database.'
+            );
+
+            redirect('owner/sambal');
+            return;
+        }
+
+        $this->session->set_flashdata(
+            'success',
+            'Nama sambal berhasil diperbarui.'
+        );
+
+        redirect('owner/sambal');
+    }
+
+
+    public function hapus_sambal($id)
+    {
+        if ($this->input->method() !== 'post') {
+            redirect('owner/sambal');
+            return;
+        }
+
+        $sambal = $this->db->get_where('sambal', [
+            'id' => $id
+        ])->row_array();
+
+        if (empty($sambal)) {
+            $this->session->set_flashdata(
+                'error',
+                'Sambal yang ingin dihapus tidak ditemukan.'
+            );
+
+            redirect('owner/sambal');
+            return;
+        }
+
+        $this->db->where('id', $id);
+        $this->db->update('sambal', ['status' => 'habis']);
+
+        $this->session->set_flashdata(
+            'success',
+            'Sambal berhasil dihapus dari daftar.'
+        );
+
+        redirect('owner/sambal');
+    }
+
+
     private function _data_menu_dari_post()
     {
         $nama_menu = trim((string) $this->input->post('nama_menu', true));
@@ -531,10 +717,22 @@ class Owner extends CI_Controller {
             return NULL;
         }
 
+        $pakai_sambal = (
+            $kategori === 'makanan' &&
+            $this->input->post('pakai_sambal')
+        ) ? 1 : 0;
+
+        $pakai_level = (
+            $kategori === 'makanan' &&
+            $this->input->post('pakai_level')
+        ) ? 1 : 0;
+
         return [
-            'nama_menu' => $nama_menu,
-            'harga'     => (int) $harga,
-            'kategori'  => $kategori
+            'nama_menu'    => $nama_menu,
+            'harga'        => (int) $harga,
+            'kategori'     => $kategori,
+            'pakai_sambal' => $pakai_sambal,
+            'pakai_level'  => $pakai_level
         ];
     }
 

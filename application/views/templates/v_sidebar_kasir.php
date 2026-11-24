@@ -62,7 +62,7 @@ $tanggal_ini = date('d') . ' ' . $nama_bulan[(int) date('n')] . ' ' . date('Y');
 
             <a class="nav-item<?= $aktif === 'antrean' ? ' is-active' : '' ?>" href="<?= site_url('cashier/antrean_meja'); ?>"<?= $aktif === 'antrean' ? ' aria-current="page"' : '' ?>>
                 <i class="fa-solid fa-bell-concierge" aria-hidden="true"></i> <span>Antrean Meja QR</span>
-                <?php if ($jml_pending > 0): ?><span class="nav-count"><?= $jml_pending; ?></span><?php endif; ?>
+                <span class="nav-count<?= ((int) $jml_pending > 0) ? '' : ' d-none'; ?>" id="navCountAntrean"><?= (int) $jml_pending; ?></span>
             </a>
 
             <a class="nav-item<?= $aktif === 'laporan' ? ' is-active' : '' ?>" href="<?= site_url('cashier/laporan'); ?>"<?= $aktif === 'laporan' ? ' aria-current="page"' : '' ?>>
@@ -130,5 +130,54 @@ $tanggal_ini = date('d') . ' ' . $nama_bulan[(int) date('n')] . ' ' . date('Y');
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="<?= base_url('assets/js/theme.js'); ?>"></script>
+<script>
+(function () {
+    var badge = document.getElementById('navCountAntrean');
+
+    if (!badge || !window.fetch) {
+        return;
+    }
+
+    var url = <?= json_encode(site_url('cashier/jumlah_antrean')); ?>;
+    var sedangMemuat = false;
+
+    function perbaruiJumlah() {
+        if (sedangMemuat) {
+            return;
+        }
+
+        sedangMemuat = true;
+
+        fetch(url, {
+            cache: 'no-store',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+            .then(function (respons) {
+                if (!respons.ok) {
+                    throw new Error('Gagal memuat jumlah antrean');
+                }
+
+                return respons.json();
+            })
+            .then(function (data) {
+                var jumlah = parseInt(data.jumlah, 10);
+
+                if (isNaN(jumlah) || jumlah < 0) {
+                    return;
+                }
+
+                badge.textContent = jumlah;
+                badge.classList.toggle('d-none', jumlah === 0);
+            })
+            .catch(function () {})
+            .then(function () {
+                sedangMemuat = false;
+            });
+    }
+
+    perbaruiJumlah();
+    window.setInterval(perbaruiJumlah, 3000);
+})();
+</script>
 </body>
 </html>

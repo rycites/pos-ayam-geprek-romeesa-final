@@ -54,6 +54,12 @@ $total_pesanan = (isset($pesanan) && is_array($pesanan))
 
             $nama_menu = $p['nama_menu'] ?? 'Menu tidak ditemukan';
 
+            $nama_sambal = trim((string) ($p['nama_sambal'] ?? ''));
+
+            $level_pedas = isset($p['level_pedas'])
+                ? (int) $p['level_pedas']
+                : 0;
+
             $nomor_meja = $p['nomor_meja'] ?? '-';
 
             $no_faktur = $p['no_faktur'] ?? '-';
@@ -127,6 +133,23 @@ $total_pesanan = (isset($pesanan) && is_array($pesanan))
                             <div class="fw-bold">
                                 <?= html_escape($nama_menu); ?>
                             </div>
+
+                            <?php if ($nama_sambal !== '' || $level_pedas > 0): ?>
+                                <div class="text-muted small">
+                                    <?php if ($nama_sambal !== ''): ?>
+                                        <i class="fa-solid fa-pepper-hot me-1" aria-hidden="true"></i>
+                                        <?= html_escape($nama_sambal); ?>
+                                    <?php endif; ?>
+
+                                    <?php if ($nama_sambal !== '' && $level_pedas > 0): ?>
+                                        &middot;
+                                    <?php endif; ?>
+
+                                    <?php if ($level_pedas > 0): ?>
+                                        Level <?= $level_pedas; ?>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
 
                             <div class="text-muted small">
                                 <i class="fa-regular fa-clock me-1" aria-hidden="true"></i>

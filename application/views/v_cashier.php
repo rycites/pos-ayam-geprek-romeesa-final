@@ -9,6 +9,10 @@ $cart = $this->session->userdata('cart');
 
 $cart = (is_array($cart)) ? $cart : [];
 
+$sambal_tersedia = isset($sambal_tersedia) && is_array($sambal_tersedia)
+    ? $sambal_tersedia
+    : [];
+
 $grand_total = 0;
 
 foreach ($cart as $item) {
@@ -188,6 +192,11 @@ $total_menu = (isset($menu) && is_array($menu))
                     $id_menu = $m['id'] ?? '';
 
                     $harga_menu = (float) ($m['harga'] ?? 0);
+
+                    $pakai_sambal = !empty($m['pakai_sambal']);
+                    $pakai_level  = !empty($m['pakai_level']);
+                    $punya_opsi   = $pakai_sambal || $pakai_level;
+                    $sambal_kosong = $pakai_sambal && empty($sambal_tersedia);
                     ?>
 
                     <article
@@ -240,25 +249,54 @@ $total_menu = (isset($menu) && is_array($menu))
 
                                 <?php if ($id_menu !== ''): ?>
 
-                                    <form
-                                        action="<?= site_url('cashier/add_cart/' . $id_menu); ?>"
-                                        method="POST"
-                                        class="d-inline"
-                                    >
-                                        <input
-                                            type="hidden"
-                                            name="<?= $this->security->get_csrf_token_name(); ?>"
-                                            value="<?= $this->security->get_csrf_hash(); ?>"
-                                        >
+                                    <?php if ($sambal_kosong): ?>
+
                                         <button
-                                            type="submit"
+                                            type="button"
                                             class="dish-add"
-                                            aria-label="Tambah <?= html_escape($nama_menu); ?> ke keranjang"
-                                            title="Tambah ke keranjang"
+                                            disabled
+                                            aria-label="Sambal belum tersedia untuk <?= html_escape($nama_menu); ?>"
+                                            title="Sambal belum tersedia"
+                                        >
+                                            <i class="fa-solid fa-ban" aria-hidden="true"></i>
+                                        </button>
+
+                                    <?php elseif ($punya_opsi): ?>
+
+                                        <button
+                                            type="button"
+                                            class="dish-add"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#opsiKasir<?= (int) $id_menu; ?>"
+                                            aria-label="Pilih sambal atau level untuk <?= html_escape($nama_menu); ?>"
+                                            title="Pilih sambal / level"
                                         >
                                             <i class="fa-solid fa-plus" aria-hidden="true"></i>
                                         </button>
-                                    </form>
+
+                                    <?php else: ?>
+
+                                        <form
+                                            action="<?= site_url('cashier/add_cart/' . $id_menu); ?>"
+                                            method="POST"
+                                            class="d-inline"
+                                        >
+                                            <input
+                                                type="hidden"
+                                                name="<?= $this->security->get_csrf_token_name(); ?>"
+                                                value="<?= $this->security->get_csrf_hash(); ?>"
+                                            >
+                                            <button
+                                                type="submit"
+                                                class="dish-add"
+                                                aria-label="Tambah <?= html_escape($nama_menu); ?> ke keranjang"
+                                                title="Tambah ke keranjang"
+                                            >
+                                                <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                                            </button>
+                                        </form>
+
+                                    <?php endif; ?>
 
                                 <?php else: ?>
 
@@ -320,6 +358,116 @@ $total_menu = (isset($menu) && is_array($menu))
 
 
     <!-- =================================================
+         MODAL PILIHAN SAMBAL DAN LEVEL PEDAS
+    ================================================== -->
+
+    <?php if (!empty($menu) && is_array($menu)): ?>
+
+        <?php foreach ($menu as $m): ?>
+
+            <?php
+            $id_menu_opsi = (int) ($m['id'] ?? 0);
+            $pakai_sambal_opsi = !empty($m['pakai_sambal']);
+            $pakai_level_opsi  = !empty($m['pakai_level']);
+            $sambal_kosong_opsi = $pakai_sambal_opsi && empty($sambal_tersedia);
+            ?>
+
+            <?php if (
+                $id_menu_opsi > 0 &&
+                ($pakai_sambal_opsi || $pakai_level_opsi) &&
+                !$sambal_kosong_opsi
+            ): ?>
+
+                <div
+                    class="modal fade"
+                    id="opsiKasir<?= $id_menu_opsi; ?>"
+                    tabindex="-1"
+                    aria-labelledby="opsiKasirLabel<?= $id_menu_opsi; ?>"
+                    aria-hidden="true"
+                >
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+
+                            <form
+                                action="<?= site_url('cashier/add_cart/' . $id_menu_opsi); ?>"
+                                method="POST"
+                            >
+                                <input
+                                    type="hidden"
+                                    name="<?= $this->security->get_csrf_token_name(); ?>"
+                                    value="<?= $this->security->get_csrf_hash(); ?>"
+                                >
+
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="opsiKasirLabel<?= $id_menu_opsi; ?>">
+                                        Pilihan <?= html_escape($m['nama_menu']); ?>
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                                </div>
+
+                                <div class="modal-body">
+                                    <?php if ($pakai_sambal_opsi): ?>
+                                        <div class="mb-3">
+                                            <label class="form-label" for="sambal_kasir_<?= $id_menu_opsi; ?>">
+                                                Sambal
+                                            </label>
+                                            <select
+                                                id="sambal_kasir_<?= $id_menu_opsi; ?>"
+                                                name="id_sambal"
+                                                class="form-select"
+                                                required
+                                            >
+                                                <option value="">Pilih sambal</option>
+                                                <?php foreach ($sambal_tersedia as $s): ?>
+                                                    <option value="<?= (int) $s['id']; ?>">
+                                                        <?= html_escape($s['nama_sambal']); ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <?php if ($pakai_level_opsi): ?>
+                                        <div class="mb-0">
+                                            <label class="form-label" for="level_kasir_<?= $id_menu_opsi; ?>">
+                                                Level pedas
+                                            </label>
+                                            <select
+                                                id="level_kasir_<?= $id_menu_opsi; ?>"
+                                                name="level_pedas"
+                                                class="form-select"
+                                                required
+                                            >
+                                                <option value="">Pilih level</option>
+                                                <?php for ($level = 1; $level <= 6; $level++): ?>
+                                                    <option value="<?= $level; ?>">Level <?= $level; ?></option>
+                                                <?php endfor; ?>
+                                            </select>
+                                            <p class="text-muted small mb-0 mt-1">
+                                                Level pedas tidak menambah biaya.
+                                            </p>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                                    <button type="submit" class="btn btn-primary">Tambah ke keranjang</button>
+                                </div>
+                            </form>
+
+                        </div>
+                    </div>
+                </div>
+
+            <?php endif; ?>
+
+        <?php endforeach; ?>
+
+    <?php endif; ?>
+
+
+    <!-- =================================================
          KERANJANG PESANAN
     ================================================== -->
 
@@ -351,11 +499,9 @@ $total_menu = (isset($menu) && is_array($menu))
 
             <?php if (!empty($cart)): ?>
 
-                <?php foreach ($cart as $item): ?>
+                <?php foreach ($cart as $cart_key => $item): ?>
 
                     <?php
-                    $id_cart = $item['id'] ?? '';
-
                     $nama_cart = $item['nama_menu'] ?? 'Menu';
 
                     $harga_cart = (float) ($item['harga'] ?? 0);
@@ -363,6 +509,12 @@ $total_menu = (isset($menu) && is_array($menu))
                     $qty_cart = (int) ($item['qty'] ?? 0);
 
                     $subtotal_cart = (float) ($item['subtotal'] ?? 0);
+
+                    $nama_sambal_cart = trim((string) ($item['nama_sambal'] ?? ''));
+
+                    $level_pedas_cart = isset($item['level_pedas'])
+                        ? (int) $item['level_pedas']
+                        : 0;
                     ?>
 
                     <div class="cart-line">
@@ -380,6 +532,24 @@ $total_menu = (isset($menu) && is_array($menu))
                                 <?= number_format($harga_cart, 0, ',', '.'); ?>
                             </div>
 
+                            <?php if ($nama_sambal_cart !== '' || $level_pedas_cart > 0): ?>
+
+                                <div class="line-price">
+                                    <?php if ($nama_sambal_cart !== ''): ?>
+                                        Sambal: <?= html_escape($nama_sambal_cart); ?>
+                                    <?php endif; ?>
+
+                                    <?php if ($nama_sambal_cart !== '' && $level_pedas_cart > 0): ?>
+                                        &middot;
+                                    <?php endif; ?>
+
+                                    <?php if ($level_pedas_cart > 0): ?>
+                                        Level <?= $level_pedas_cart; ?>
+                                    <?php endif; ?>
+                                </div>
+
+                            <?php endif; ?>
+
                         </div>
 
 
@@ -391,30 +561,31 @@ $total_menu = (isset($menu) && is_array($menu))
                                 Rp <?= number_format($subtotal_cart, 0, ',', '.'); ?>
                             </div>
 
-                            <?php if ($id_cart !== ''): ?>
-
-                                <form
-                                    action="<?= site_url('cashier/remove_cart/' . $id_cart); ?>"
-                                    method="POST"
-                                    class="d-inline"
+                            <form
+                                action="<?= site_url('cashier/remove_cart'); ?>"
+                                method="POST"
+                                class="d-inline"
+                            >
+                                <input
+                                    type="hidden"
+                                    name="<?= $this->security->get_csrf_token_name(); ?>"
+                                    value="<?= $this->security->get_csrf_hash(); ?>"
                                 >
-                                    <input
-                                        type="hidden"
-                                        name="<?= $this->security->get_csrf_token_name(); ?>"
-                                        value="<?= $this->security->get_csrf_hash(); ?>"
-                                    >
-                                    <button
-                                        type="submit"
-                                        class="small text-danger border-0 bg-transparent p-0"
-                                        aria-label="Hapus <?= html_escape($nama_cart); ?> dari keranjang"
-                                        onclick="return confirm('Hapus <?= html_escape($nama_cart); ?> dari keranjang?');"
-                                    >
-                                        <i class="fa-solid fa-trash-can me-1" aria-hidden="true"></i>
-                                        Hapus
-                                    </button>
-                                </form>
-
-                            <?php endif; ?>
+                                <input
+                                    type="hidden"
+                                    name="cart_key"
+                                    value="<?= html_escape((string) $cart_key); ?>"
+                                >
+                                <button
+                                    type="submit"
+                                    class="small text-danger border-0 bg-transparent p-0"
+                                    aria-label="Hapus <?= html_escape($nama_cart); ?> dari keranjang"
+                                    onclick="return confirm('Hapus <?= html_escape($nama_cart); ?> dari keranjang?');"
+                                >
+                                    <i class="fa-solid fa-trash-can me-1" aria-hidden="true"></i>
+                                    Hapus
+                                </button>
+                            </form>
 
                         </div>
 
